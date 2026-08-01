@@ -120,4 +120,40 @@ public class AuthController {
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
+
+    @GetMapping("/seed")
+    public ResponseEntity<?> seedDatabase() {
+        // Seed Roles
+        if (!roleRepository.findByName(RoleName.ADMINISTRATOR).isPresent()) {
+            roleRepository.save(new Role(null, RoleName.ADMINISTRATOR));
+        }
+        if (!roleRepository.findByName(RoleName.TEACHER).isPresent()) {
+            roleRepository.save(new Role(null, RoleName.TEACHER));
+        }
+        if (!roleRepository.findByName(RoleName.PARENT).isPresent()) {
+            roleRepository.save(new Role(null, RoleName.PARENT));
+        }
+        if (!roleRepository.findByName(RoleName.STUDENT).isPresent()) {
+            roleRepository.save(new Role(null, RoleName.STUDENT));
+        }
+
+        // Seed Admin User
+        if (!userRepository.existsByUsername("admin")) {
+            User admin = new User();
+            admin.setUsername("admin");
+            admin.setEmail("admin@school.com");
+            admin.setPassword(encoder.encode("admin123"));
+            admin.setFirstName("System");
+            admin.setLastName("Admin");
+            admin.setPhone("0000000000");
+            
+            Set<Role> roles = new HashSet<>();
+            roles.add(roleRepository.findByName(RoleName.ADMINISTRATOR).get());
+            admin.setRoles(roles);
+            
+            userRepository.save(admin);
+            return ResponseEntity.ok(new MessageResponse("Database seeded with roles and admin user!"));
+        }
+        return ResponseEntity.ok(new MessageResponse("Database already seeded."));
+    }
 }
