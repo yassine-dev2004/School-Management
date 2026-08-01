@@ -13,21 +13,12 @@ const Login = () => {
   const { login, getDefaultRoute } = useAuth();
   const navigate = useNavigate();
 
-  // Demo accounts (work without backend):
-  //   Admin:  username = admin    password = admin123
-  //   Parent: username = parent   password = parent123
-  const DEMO_ACCOUNTS = {
-    admin:  { token: 'demo-token', id: 1, username: 'admin',  email: 'admin@school.com',  roles: ['ADMINISTRATOR'] },
-    parent: { token: 'demo-token', id: 2, username: 'parent', email: 'parent@school.com', roles: ['PARENT'] },
-  };
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      // Try real API first
       const userData = await login(username, password);
       if (userData.roles?.includes('ADMINISTRATOR') || userData.roles?.includes('TEACHER')) {
         navigate('/admin/dashboard');
@@ -37,16 +28,10 @@ const Login = () => {
         navigate('/parent/dashboard');
       }
     } catch (err) {
-      // Fallback to demo mode
-      const demoKey = username.toLowerCase();
-      const demoPasswords = { admin: 'admin123', parent: 'parent123' };
-      
-      if (DEMO_ACCOUNTS[demoKey] && password === demoPasswords[demoKey]) {
-        const demoData = DEMO_ACCOUNTS[demoKey];
-        localStorage.setItem('user', JSON.stringify(demoData));
-        window.location.href = demoData.roles.includes('ADMINISTRATOR') ? '/admin/dashboard' : '/parent/dashboard';
+      if (err.response && err.response.status === 401) {
+        setError('اسم المستخدم أو كلمة المرور غير صحيحة');
       } else {
-        setError('بيانات تجريبية: المدير (admin / admin123) — ولي أمر (parent / parent123)');
+        setError('تعذر الاتصال بالخادم. تأكد من أن قاعدة البيانات مهيأة.');
       }
     } finally {
       setLoading(false);
