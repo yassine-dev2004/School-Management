@@ -152,8 +152,26 @@ public class AuthController {
             admin.setRoles(roles);
             
             userRepository.save(admin);
-            return ResponseEntity.ok(new MessageResponse("Database seeded with roles and admin user!"));
         }
+
+        // Seed Parent User
+        if (!userRepository.existsByUsername("parent")) {
+            User parent = new User();
+            parent.setUsername("parent");
+            parent.setEmail("parent@school.com");
+            parent.setPassword(encoder.encode("parent123"));
+            parent.setFirstName("Demo");
+            parent.setLastName("Parent");
+            parent.setPhone("0000000001");
+            
+            Set<Role> roles = new HashSet<>();
+            roles.add(roleRepository.findByName(RoleName.PARENT).get());
+            parent.setRoles(roles);
+            
+            userRepository.save(parent);
+            return ResponseEntity.ok(new MessageResponse("Database seeded with roles, admin user, and parent user!"));
+        }
+        
         return ResponseEntity.ok(new MessageResponse("Database already seeded."));
     }
 }
