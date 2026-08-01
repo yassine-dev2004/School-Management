@@ -1,0 +1,24 @@
+# Node
+node_modules/
+dist/
+.env*
+npm-debug.log*
+
+# Java
+target/
+*.class
+*.jar
+*.war
+.mvn/
+!/.mvn/wrapper/maven-wrapper.jar
+!/.mvn/wrapper/maven-wrapper.properties
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db

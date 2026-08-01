@@ -1,0 +1,118 @@
+.crud-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.crud-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.crud-toolbar::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.02), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 3s infinite;
+  pointer-events: none;
+}
+
+.result-count {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+}
+
+.data-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  text-align: right;
+  padding: 1rem 1.2rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--border-active);
+  white-space: nowrap;
+  background: var(--bg-surface);
+}
+
+.data-table td {
+  padding: 1rem 1.2rem;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border-color);
+  transition: background var(--transition-fast);
+}
+
+.data-table tbody tr {
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.data-table tbody tr::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; right: 0;
+  width: 0px;
+  background: var(--primary);
+  transition: width var(--transition-fast);
+}
+
+.data-table tbody tr:hover {
+  background: var(--bg-surface-hover);
+  transform: translateX(-4px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  z-index: 2;
+}
+
+.data-table tbody tr:hover::before {
+  width: 4px;
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+/* Modal Enhancements */
+.modal-overlay {
+  animation: fadeIn 250ms cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.modal-content {
+  animation: popIn 350ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
