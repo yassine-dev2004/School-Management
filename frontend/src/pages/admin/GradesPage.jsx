@@ -88,9 +88,10 @@ const GradesPage = () => {
     }
   };
 
-  const filtered = items.filter(i => {
+  const filtered = (Array.isArray(items) ? items : []).filter(i => {
+    if (!i) return false;
     const name = `${i.student?.user?.firstName || ''} ${i.student?.user?.lastName || ''}`;
-    return name.includes(search) || i.subject?.name?.includes(search);
+    return name.includes(search) || (i.subject?.name && i.subject.name.includes(search));
   });
 
   const getScoreColor = (score) => {

@@ -87,10 +87,11 @@ const AttendancePage = () => {
     return <span className="badge badge-warning"><Clock size={12} /> متأخر</span>;
   };
 
+  const safeRecords = Array.isArray(records) ? records : [];
   const stats = {
-    present: records.filter(r => r.status === 'حاضر' || r.status === 'Present').length,
-    absent: records.filter(r => r.status === 'غائب' || r.status === 'Absent').length,
-    late: records.filter(r => r.status === 'متأخر' || r.status === 'Late').length,
+    present: safeRecords.filter(r => r && (r.status === 'حاضر' || r.status === 'Present')).length,
+    absent: safeRecords.filter(r => r && (r.status === 'غائب' || r.status === 'Absent')).length,
+    late: safeRecords.filter(r => r && (r.status === 'متأخر' || r.status === 'Late')).length,
   };
 
   return (
@@ -137,7 +138,7 @@ const AttendancePage = () => {
                 </tr>
               </thead>
               <tbody>
-                {records.map((r, idx) => (
+                {safeRecords.map((r, idx) => (
                   <tr key={r.id}>
                     <td>{idx + 1}</td>
                     <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>

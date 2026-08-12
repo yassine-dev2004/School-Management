@@ -41,8 +41,10 @@ public class TeacherService {
         // 1. Create User
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPassword(encoder.encode(request.getPassword()));
+        String pwd = (request.getPassword() != null && !request.getPassword().isEmpty()) ? request.getPassword() : "teacher123";
+        String email = (request.getEmail() != null && !request.getEmail().isEmpty()) ? request.getEmail() : request.getUsername() + "@teacher.school";
+        user.setPassword(encoder.encode(pwd));
+        user.setEmail(email);
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
 

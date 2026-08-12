@@ -92,9 +92,10 @@ const StudentsPage = () => {
     }
   };
 
-  const filtered = items.filter(i => {
+  const filtered = (Array.isArray(items) ? items : []).filter(i => {
+    if (!i) return false;
     const name = `${i.user?.firstName || ''} ${i.user?.lastName || ''}`;
-    return name.includes(search) || i.user?.username?.includes(search);
+    return name.includes(search) || (i.user?.username && i.user.username.includes(search));
   });
 
   return (
