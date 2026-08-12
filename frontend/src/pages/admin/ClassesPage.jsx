@@ -15,34 +15,44 @@ const ClassesPage = () => {
 
   const loadItems = async () => {
     setLoading(true);
-    try { const res = await api.get('/classes'); setItems(res.data); }
-    catch {
-      setItems([
-        { id: 1, name: 'الصف الأول', section: 'أ', teacher: { user: { firstName: 'سارة', lastName: 'أحمد' } }, students: [{}, {}, {}] },
-        { id: 2, name: 'الصف الأول', section: 'ب', teacher: { user: { firstName: 'محمد', lastName: 'العلي' } }, students: [{}, {}] },
-        { id: 3, name: 'الصف الثاني', section: 'أ', teacher: { user: { firstName: 'ليلى', lastName: 'حسن' } }, students: [{}, {}, {}, {}] },
-        { id: 4, name: 'الصف الثالث', section: 'أ', teacher: null, students: [] },
-      ]);
+    try { 
+      const res = await api.get('/classes'); 
+      setItems(Array.isArray(res.data) ? res.data : []); 
+    } catch {
+      setItems([]);
     }
     setLoading(false);
   };
 
   const handleDelete = async (id) => {
     if (!confirm('هل أنت متأكد من حذف هذا الفصل؟')) return;
-    try { await api.delete(`/classes/${id}`); } catch {}
-    setItems(items.filter(i => i.id !== id));
+    try { 
+      await api.delete(`/classes/${id}`); 
+      setItems(prev => prev.filter(i => i.id !== id));
+    } catch {
+      alert('فشل الحذف. قد يكون السيرفر غير متصل.');
+    }
   };
 
   const handleSave = async () => {
     try {
-      if (editing) { await api.put(`/classes/${editing.id}`, form); }
-      else { await api.post('/classes', form); }
-      loadItems();
-    } catch {}
-    setShowModal(false); setEditing(null);
+      if (editing) { 
+        await api.put(`/classes/${editing.id}`, form); 
+      } else { 
+        await api.post('/classes', form); 
+      }
+      setShowModal(false); 
+      setEditing(null);
+      await loadItems();
+    } catch (err) {
+      alert('فشل حفظ الفصل: ' + (err.response?.data?.message || err.message));
+    }
   };
 
-  const filtered = items.filter(i => i.name?.includes(search) || i.section?.includes(search));
+  const filtered = (Array.isArray(items) ? items : []).filter(i => {
+    if (!i) return false;
+    return (i.name && i.name.includes(search)) || (i.section && i.section.includes(search));
+  });
 
   return (
     <div className="crud-page animate-fade-in">
@@ -65,13 +75,13 @@ const ClassesPage = () => {
                 {filtered.map((item, idx) => (
                   <tr key={item.id}>
                     <td>{idx + 1}</td>
-                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.name}</td>
-                    <td><span className="badge badge-primary">{item.section}</span></td>
-                    <td>{item.teacher ? `${item.teacher.user?.firstName} ${item.teacher.user?.lastName}` : <span style={{ color: 'var(--warning)' }}>غير معين</span>}</td>
+                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.name || '—'}</td>
+                    <td><span className="badge badge-primary">{item.section || '—'}</span></td>
+                    <td>{item.teacher?.user ? `${item.teacher.user.firstName} ${item.teacher.user.lastName}` : <span style={{ color: 'var(--text-muted)' }}>غير معين</span>}</td>
                     <td>{item.students?.length || 0}</td>
                     <td>
                       <div className="table-actions">
-                        <button className="btn-icon" onClick={() => { setEditing(item); setForm({ name: item.name, section: item.section }); setShowModal(true); }}><Pencil size={16} /></button>
+                        <button className="btn-icon" onClick={() => { setEditing(item); setForm({ name: item.name || '', section: item.section || '' }); setShowModal(true); }}><Pencil size={16} /></button>
                         <button className="btn-icon" onClick={() => handleDelete(item.id)} style={{ color: 'var(--danger)' }}><Trash2 size={16} /></button>
                       </div>
                     </td>

@@ -15,35 +15,47 @@ const HomeworkPage = () => {
 
   const loadItems = async () => {
     setLoading(true);
-    try { const res = await api.get('/homework'); setItems(res.data); }
-    catch {
-      setItems([
-        { id: 1, title: 'حل تمارين الفصل الثالث', description: 'حل جميع تمارين الفصل الثالث من كتاب الرياضيات', dueDate: '2025-07-01', subject: { name: 'الرياضيات' }, schoolClass: { name: 'الصف الأول', section: 'أ' }, submissions: [{}, {}] },
-        { id: 2, title: 'بحث عن الطاقة المتجددة', description: 'كتابة بحث من 3 صفحات عن مصادر الطاقة المتجددة', dueDate: '2025-07-05', subject: { name: 'العلوم' }, schoolClass: { name: 'الصف الثاني', section: 'ب' }, submissions: [{}] },
-        { id: 3, title: 'إنشاء عن الوطن', description: 'كتابة موضوع إنشاء عن حب الوطن', dueDate: '2025-07-03', subject: { name: 'اللغة العربية' }, schoolClass: { name: 'الصف الأول', section: 'أ' }, submissions: [] },
-      ]);
+    try { 
+      const res = await api.get('/homework'); 
+      setItems(Array.isArray(res.data) ? res.data : []); 
+    } catch {
+      setItems([]);
     }
     setLoading(false);
   };
 
   const handleDelete = async (id) => {
     if (!confirm('هل أنت متأكد من حذف هذا الواجب؟')) return;
-    try { await api.delete(`/homework/${id}`); } catch {}
-    setItems(items.filter(i => i.id !== id));
+    try { 
+      await api.delete(`/homework/${id}`); 
+      setItems(prev => prev.filter(i => i.id !== id));
+    } catch {
+      alert('فشل الحذف. قد يكون السيرفر غير متصل.');
+    }
   };
 
   const handleSave = async () => {
     try {
-      if (editing) { await api.put(`/homework/${editing.id}`, form); }
-      else { await api.post('/homework', form); }
-      loadItems();
-    } catch {}
-    setShowModal(false); setEditing(null);
+      if (editing) { 
+        await api.put(`/homework/${editing.id}`, form); 
+      } else { 
+        await api.post('/homework', form); 
+      }
+      setShowModal(false); 
+      setEditing(null);
+      await loadItems();
+    } catch (err) {
+      alert('فشل حفظ الواجب: ' + (err.response?.data?.message || err.message));
+    }
   };
 
-  const filtered = items.filter(i => i.title?.includes(search) || i.subject?.name?.includes(search));
+  const filtered = (Array.isArray(items) ? items : []).filter(i => {
+    if (!i) return false;
+    return (i.title && i.title.includes(search)) || (i.subject?.name && i.subject.name.includes(search));
+  });
 
   const isDueSoon = (date) => {
+    if (!date) return false;
     const diff = (new Date(date) - new Date()) / (1000 * 60 * 60 * 24);
     return diff <= 2 && diff >= 0;
   };
@@ -69,7 +81,7 @@ const HomeworkPage = () => {
                 {filtered.map((item, idx) => (
                   <tr key={item.id}>
                     <td>{idx + 1}</td>
-                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.title}</td>
+                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.title || '—'}</td>
                     <td>{item.subject?.name || '—'}</td>
                     <td>{item.schoolClass ? `${item.schoolClass.name} - ${item.schoolClass.section}` : '—'}</td>
                     <td>
@@ -78,7 +90,7 @@ const HomeworkPage = () => {
                     <td><span className="badge badge-primary">{item.submissions?.length || 0}</span></td>
                     <td>
                       <div className="table-actions">
-                        <button className="btn-icon" onClick={() => { setEditing(item); setForm({ title: item.title, description: item.description, dueDate: item.dueDate }); setShowModal(true); }}><Pencil size={16} /></button>
+                        <button className="btn-icon" onClick={() => { setEditing(item); setForm({ title: item.title || '', description: item.description || '', dueDate: item.dueDate || '' }); setShowModal(true); }}><Pencil size={16} /></button>
                         <button className="btn-icon" onClick={() => handleDelete(item.id)} style={{ color: 'var(--danger)' }}><Trash2 size={16} /></button>
                       </div>
                     </td>

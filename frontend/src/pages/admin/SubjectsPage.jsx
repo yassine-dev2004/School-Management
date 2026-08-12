@@ -15,36 +15,44 @@ const SubjectsPage = () => {
 
   const loadItems = async () => {
     setLoading(true);
-    try { const res = await api.get('/subjects'); setItems(res.data); }
-    catch {
-      setItems([
-        { id: 1, name: 'الرياضيات', code: 'MATH101' },
-        { id: 2, name: 'اللغة العربية', code: 'AR101' },
-        { id: 3, name: 'العلوم', code: 'SCI101' },
-        { id: 4, name: 'اللغة الإنجليزية', code: 'EN101' },
-        { id: 5, name: 'التربية الإسلامية', code: 'ISL101' },
-        { id: 6, name: 'الدراسات الاجتماعية', code: 'SOC101' },
-      ]);
+    try { 
+      const res = await api.get('/subjects'); 
+      setItems(Array.isArray(res.data) ? res.data : []); 
+    } catch {
+      setItems([]);
     }
     setLoading(false);
   };
 
   const handleDelete = async (id) => {
     if (!confirm('هل أنت متأكد من حذف هذه المادة؟')) return;
-    try { await api.delete(`/subjects/${id}`); } catch {}
-    setItems(items.filter(i => i.id !== id));
+    try { 
+      await api.delete(`/subjects/${id}`); 
+      setItems(prev => prev.filter(i => i.id !== id));
+    } catch {
+      alert('فشل الحذف. قد يكون السيرفر غير متصل.');
+    }
   };
 
   const handleSave = async () => {
     try {
-      if (editing) { await api.put(`/subjects/${editing.id}`, form); }
-      else { await api.post('/subjects', form); }
-      loadItems();
-    } catch {}
-    setShowModal(false); setEditing(null);
+      if (editing) { 
+        await api.put(`/subjects/${editing.id}`, form); 
+      } else { 
+        await api.post('/subjects', form); 
+      }
+      setShowModal(false); 
+      setEditing(null);
+      await loadItems();
+    } catch (err) {
+      alert('فشل حفظ المادة: ' + (err.response?.data?.message || err.message));
+    }
   };
 
-  const filtered = items.filter(i => i.name?.includes(search) || i.code?.includes(search));
+  const filtered = (Array.isArray(items) ? items : []).filter(i => {
+    if (!i) return false;
+    return (i.name && i.name.includes(search)) || (i.code && i.code.includes(search));
+  });
 
   return (
     <div className="crud-page animate-fade-in">
@@ -67,11 +75,11 @@ const SubjectsPage = () => {
                 {filtered.map((item, idx) => (
                   <tr key={item.id}>
                     <td>{idx + 1}</td>
-                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.name}</td>
-                    <td><span className="badge badge-primary">{item.code}</span></td>
+                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.name || '—'}</td>
+                    <td><span className="badge badge-primary">{item.code || '—'}</span></td>
                     <td>
                       <div className="table-actions">
-                        <button className="btn-icon" onClick={() => { setEditing(item); setForm({ name: item.name, code: item.code }); setShowModal(true); }}><Pencil size={16} /></button>
+                        <button className="btn-icon" onClick={() => { setEditing(item); setForm({ name: item.name || '', code: item.code || '' }); setShowModal(true); }}><Pencil size={16} /></button>
                         <button className="btn-icon" onClick={() => handleDelete(item.id)} style={{ color: 'var(--danger)' }}><Trash2 size={16} /></button>
                       </div>
                     </td>

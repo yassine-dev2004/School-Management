@@ -18,12 +18,11 @@ const ParentsPage = () => {
 
   const loadItems = async () => {
     setLoading(true);
-    try { const res = await api.get('/parents'); setItems(res.data); }
-    catch {
-      setItems([
-        { id: 1, user: { firstName: 'خالد', lastName: 'محمد', email: 'khalid@parent.com', phone: '0551234567' }, occupation: 'مهندس', address: 'الرياض - حي النزهة', children: [{ user: { firstName: 'أحمد' } }] },
-        { id: 2, user: { firstName: 'منى', lastName: 'العلي', email: 'mona@parent.com', phone: '0559876543' }, occupation: 'طبيبة', address: 'جدة - حي الروضة', children: [{ user: { firstName: 'فاطمة' } }, { user: { firstName: 'عمر' } }] },
-      ]);
+    try { 
+      const res = await api.get('/parents'); 
+      setItems(Array.isArray(res.data) ? res.data : []); 
+    } catch {
+      setItems([]);
     }
     setLoading(false);
   };
@@ -32,7 +31,7 @@ const ParentsPage = () => {
     if (!confirm('هل أنت متأكد من حذف ولي الأمر؟')) return;
     try { 
       await api.delete(`/parents/${id}`); 
-      setItems(items.filter(i => i.id !== id));
+      setItems(prev => prev.filter(i => i.id !== id));
     } catch {
       alert('فشل الحذف. قد يكون السيرفر غير متصل.');
     }
@@ -40,16 +39,23 @@ const ParentsPage = () => {
 
   const handleSave = async () => {
     try {
-      if (editing) { await api.put(`/parents/${editing.id}`, form); }
-      else { await api.post('/parents', form); }
-      loadItems();
-    } catch {}
-    setShowModal(false); setEditing(null);
+      if (editing) { 
+        await api.put(`/parents/${editing.id}`, form); 
+      } else { 
+        await api.post('/parents', form); 
+      }
+      setShowModal(false); 
+      setEditing(null);
+      await loadItems();
+    } catch (err) {
+      alert('فشل حفظ ولي الأمر: ' + (err.response?.data?.message || err.message));
+    }
   };
 
-  const filtered = items.filter(i => {
+  const filtered = (Array.isArray(items) ? items : []).filter(i => {
+    if (!i) return false;
     const name = `${i.user?.firstName || ''} ${i.user?.lastName || ''}`;
-    return name.includes(search) || i.user?.email?.includes(search);
+    return name.includes(search) || (i.user?.email && i.user.email.includes(search));
   });
 
   return (
@@ -77,12 +83,12 @@ const ParentsPage = () => {
                 {filtered.map((item, idx) => (
                   <tr key={item.id}>
                     <td>{idx + 1}</td>
-                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.user?.firstName} {item.user?.lastName}</td>
-                    <td>{item.user?.email}</td>
+                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.user?.firstName || '—'} {item.user?.lastName || ''}</td>
+                    <td>{item.user?.email || '—'}</td>
                     <td>{item.user?.phone || '—'}</td>
                     <td>{item.occupation || '—'}</td>
                     <td>{item.address || '—'}</td>
-                    <td>{item.children?.map(c => c.user?.firstName).join('، ') || '—'}</td>
+                    <td>{item.children?.map(c => c.user?.firstName).filter(Boolean).join('، ') || '—'}</td>
                     <td>
                       <div className="table-actions">
                         <button className="btn-icon" onClick={() => { 
@@ -92,7 +98,7 @@ const ParentsPage = () => {
                             lastName: item.user?.lastName || '',
                             username: item.user?.username || '',
                             email: item.user?.email || '',
-                            password: '', // Empty on edit
+                            password: '', 
                             occupation: item.occupation || '', 
                             address: item.address || '' 
                           }); 
