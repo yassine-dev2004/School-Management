@@ -9,8 +9,9 @@ const TeachersPage = () => {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ 
-    firstName: '', lastName: '', username: '', email: '', password: '', 
+    firstName: '', lastName: '', username: '', 
     qualification: '', joiningDate: '' 
   });
 
@@ -22,11 +23,7 @@ const TeachersPage = () => {
       const res = await api.get('/teachers');
       setItems(res.data);
     } catch {
-      setItems([
-        { id: 1, user: { firstName: 'سارة', lastName: 'أحمد', email: 'sara@school.com', phone: '0559991111' }, qualification: 'ماجستير تربية', joiningDate: '2022-09-01', subjects: [{ name: 'الرياضيات' }] },
-        { id: 2, user: { firstName: 'محمد', lastName: 'العلي', email: 'mohammed@school.com', phone: '0551112222' }, qualification: 'بكالوريوس علوم', joiningDate: '2023-01-15', subjects: [{ name: 'العلوم' }, { name: 'الفيزياء' }] },
-        { id: 3, user: { firstName: 'ليلى', lastName: 'حسن', email: 'laila@school.com', phone: '0553334444' }, qualification: 'ماجستير لغة عربية', joiningDate: '2021-08-20', subjects: [{ name: 'اللغة العربية' }] },
-      ]);
+      setItems([]);
     }
     setLoading(false);
   };
@@ -36,24 +33,49 @@ const TeachersPage = () => {
     try { 
       await api.delete(`/teachers/${id}`); 
       setItems(items.filter(i => i.id !== id));
-    } catch {
+    } catch (err) {
       alert('فشل الحذف. قد يكون السيرفر غير متصل.');
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e) => {
+    if (e) e.preventDefault();
+    if (!form.firstName || !form.lastName) {
+      alert('الرجاء إدخال الاسم الأول والاسم الأخير');
+      return;
+    }
+    setSaving(true);
     try {
-      if (editing) { await api.put(`/teachers/${editing.id}`, form); }
-      else { await api.post('/teachers', form); }
-      loadItems();
-    } catch {}
-    setShowModal(false);
-    setEditing(null);
+      const baseUsername = form.username.trim() || `${form.firstName.toLowerCase()}${Math.floor(Math.random() * 10000)}`;
+      const payload = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        username: baseUsername,
+        email: `${baseUsername}@teacher.school`,
+        password: 'teacher123',
+        qualification: form.qualification || '',
+        joiningDate: form.joiningDate || ''
+      };
+
+      if (editing) { 
+        await api.put(`/teachers/${editing.id}`, payload); 
+      } else { 
+        await api.post('/teachers', payload); 
+      }
+      setShowModal(false);
+      setEditing(null);
+      await loadItems();
+    } catch (err) {
+      console.error('Error saving teacher:', err);
+      alert('فشل حفظ المعلم: ' + (err.response?.data?.message || err.message || 'خطأ أثناء الاتصال'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const filtered = items.filter(i => {
     const name = `${i.user?.firstName || ''} ${i.user?.lastName || ''}`;
-    return name.includes(search) || i.user?.email?.includes(search);
+    return name.includes(search) || i.user?.username?.includes(search);
   });
 
   return (
@@ -62,7 +84,7 @@ const TeachersPage = () => {
         <h1 className="page-title">إدارة المعلمين</h1>
         <button className="btn btn-primary" onClick={() => { 
           setEditing(null); 
-          setForm({ firstName: '', lastName: '', username: '', email: '', password: '', qualification: '', joiningDate: '' }); 
+          setForm({ firstName: '', lastName: '', username: '', qualification: '', joiningDate: '' }); 
           setShowModal(true); 
         }}>
           <Plus size={18} /> إضافة معلم
@@ -85,7 +107,6 @@ const TeachersPage = () => {
                 <tr>
                   <th>#</th>
                   <th>الاسم</th>
-                  <th>البريد</th>
                   <th>المؤهل</th>
                   <th>المواد</th>
                   <th>تاريخ الانضمام</th>
@@ -97,7 +118,6 @@ const TeachersPage = () => {
                   <tr key={item.id}>
                     <td>{idx + 1}</td>
                     <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.user?.firstName} {item.user?.lastName}</td>
-                    <td>{item.user?.email}</td>
                     <td>{item.qualification || '—'}</td>
                     <td>{item.subjects?.map(s => s.name).join('، ') || '—'}</td>
                     <td>{item.joiningDate || '—'}</td>
@@ -109,8 +129,6 @@ const TeachersPage = () => {
                             firstName: item.user?.firstName || '',
                             lastName: item.user?.lastName || '',
                             username: item.user?.username || '',
-                            email: item.user?.email || '',
-                            password: '', // Empty on edit
                             qualification: item.qualification || '', 
                             joiningDate: item.joiningDate || '' 
                           }); 
@@ -135,36 +153,30 @@ const TeachersPage = () => {
               <h2>{editing ? 'تعديل معلم' : 'إضافة معلم جديد'}</h2>
               <button className="btn-icon" onClick={() => setShowModal(false)}><X size={20} /></button>
             </div>
-            <div className="modal-form">
+            <form onSubmit={handleSave} className="modal-form">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
                 <div className="form-group">
-                  <label>الاسم الأول</label>
+                  <label>الاسم الأول *</label>
                   <input className="input-field" value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})} required />
                 </div>
                 <div className="form-group">
-                  <label>الاسم الأخير</label>
+                  <label>الاسم الأخير *</label>
                   <input className="input-field" value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})} required />
                 </div>
               </div>
               <div className="form-group">
-                <label>اسم المستخدم</label>
-                <input className="input-field" value={form.username} onChange={e => setForm({...form, username: e.target.value})} required />
-              </div>
-              <div className="form-group">
-                <label>البريد الإلكتروني</label>
-                <input type="email" className="input-field" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
-              </div>
-              <div className="form-group">
-                <label>كلمة المرور {editing ? '(اتركه فارغاً لعدم التغيير)' : '(للتسجيل الأولي)'}</label>
-                <input type="password" className="input-field" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required={!editing} />
+                <label>اسم المستخدم (اختياري)</label>
+                <input className="input-field" placeholder="سيتم إنشاؤه تلقائياً إذا ترك فارغاً" value={form.username} onChange={e => setForm({...form, username: e.target.value})} />
               </div>
               <div className="form-group"><label>المؤهل العلمي</label><input className="input-field" value={form.qualification} onChange={e => setForm({...form, qualification: e.target.value})} /></div>
               <div className="form-group"><label>تاريخ الانضمام</label><input type="date" className="input-field" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} /></div>
               <div className="modal-actions">
-                <button className="btn btn-primary" onClick={handleSave}>حفظ</button>
-                <button className="btn btn-ghost" onClick={() => setShowModal(false)}>إلغاء</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'جاري الحفظ...' : 'حفظ'}
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>إلغاء</button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

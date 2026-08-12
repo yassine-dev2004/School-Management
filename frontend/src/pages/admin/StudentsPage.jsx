@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Pencil, Trash2, X, Loader2, Users } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, Users } from 'lucide-react';
 import api from '../../api/axios';
 import './CrudPage.css';
 
@@ -11,8 +11,9 @@ const StudentsPage = () => {
   const [editing, setEditing] = useState(null);
   const [parents, setParents] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ 
-    firstName: '', lastName: '', username: '', email: '', password: '', 
+    firstName: '', lastName: '', username: '',
     status: 'نشط', emergencyContact: '', parentId: '', classId: '' 
   });
 
@@ -38,12 +39,7 @@ const StudentsPage = () => {
       const res = await api.get('/students');
       setItems(res.data);
     } catch {
-      setItems([
-        { id: 1, user: { firstName: 'أحمد', lastName: 'محمد', email: 'ahmed@school.com', phone: '0551234567' }, status: 'نشط', emergencyContact: '0559876543', schoolClass: { name: 'الصف الأول', section: 'أ' } },
-        { id: 2, user: { firstName: 'فاطمة', lastName: 'علي', email: 'fatima@school.com', phone: '0559876543' }, status: 'نشط', emergencyContact: '0551112233', schoolClass: { name: 'الصف الثاني', section: 'ب' } },
-        { id: 3, user: { firstName: 'عمر', lastName: 'خالد', email: 'omar@school.com', phone: '0553334455' }, status: 'نشط', emergencyContact: '0557778899', schoolClass: { name: 'الصف الأول', section: 'أ' } },
-        { id: 4, user: { firstName: 'نورة', lastName: 'سعد', email: 'noura@school.com', phone: '0556667788' }, status: 'غير نشط', emergencyContact: '0554443322', schoolClass: { name: 'الصف الثالث', section: 'أ' } },
-      ]);
+      setItems([]);
     }
     setLoading(false);
   };
@@ -53,27 +49,52 @@ const StudentsPage = () => {
     try { 
       await api.delete(`/students/${id}`); 
       setItems(items.filter(i => i.id !== id));
-    } catch {
+    } catch (err) {
       alert('فشل الحذف. قد يكون السيرفر غير متصل.');
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e) => {
+    if (e) e.preventDefault();
+    if (!form.firstName || !form.lastName) {
+      alert('الرجاء إدخال الاسم الأول والاسم الأخير');
+      return;
+    }
+    setSaving(true);
     try {
+      // Auto generate username, email, password if missing
+      const baseUsername = form.username.trim() || `${form.firstName.toLowerCase()}${Math.floor(Math.random() * 10000)}`;
+      const payload = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        username: baseUsername,
+        email: `${baseUsername}@student.school`,
+        password: 'student123',
+        status: form.status || 'نشط',
+        emergencyContact: form.emergencyContact || '',
+        parentId: form.parentId ? Number(form.parentId) : null,
+        classId: form.classId ? Number(form.classId) : null,
+      };
+
       if (editing) {
-        await api.put(`/students/${editing.id}`, form);
+        await api.put(`/students/${editing.id}`, payload);
       } else {
-        await api.post('/students', form);
+        await api.post('/students', payload);
       }
-      loadItems();
-    } catch {}
-    setShowModal(false);
-    setEditing(null);
+      setShowModal(false);
+      setEditing(null);
+      await loadItems();
+    } catch (err) {
+      console.error('Error saving student:', err);
+      alert('فشل حفظ الطالب: ' + (err.response?.data?.message || err.message || 'خطأ أثناء الاتصال'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const filtered = items.filter(i => {
     const name = `${i.user?.firstName || ''} ${i.user?.lastName || ''}`;
-    return name.includes(search) || i.user?.email?.includes(search);
+    return name.includes(search) || i.user?.username?.includes(search);
   });
 
   return (
@@ -82,7 +103,7 @@ const StudentsPage = () => {
         <h1 className="page-title">إدارة الطلاب</h1>
         <button className="btn btn-primary" onClick={() => { 
           setEditing(null); 
-          setForm({ firstName: '', lastName: '', username: '', email: '', password: '', status: 'نشط', emergencyContact: '', parentId: '', classId: '' }); 
+          setForm({ firstName: '', lastName: '', username: '', status: 'نشط', emergencyContact: '', parentId: '', classId: '' }); 
           setShowModal(true); 
         }}>
           <Plus size={18} /> إضافة طالب
@@ -107,8 +128,7 @@ const StudentsPage = () => {
                 <tr>
                   <th>#</th>
                   <th>الاسم الكامل</th>
-                  <th>البريد الإلكتروني</th>
-                  <th>الهاتف</th>
+                  <th>ولي الأمر</th>
                   <th>الفصل</th>
                   <th>الحالة</th>
                   <th>إجراءات</th>
@@ -119,8 +139,7 @@ const StudentsPage = () => {
                   <tr key={item.id}>
                     <td>{idx + 1}</td>
                     <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.user?.firstName} {item.user?.lastName}</td>
-                    <td>{item.user?.email}</td>
-                    <td>{item.user?.phone || '—'}</td>
+                    <td>{item.parent?.user ? `${item.parent.user.firstName} ${item.parent.user.lastName}` : '—'}</td>
                     <td>{item.schoolClass ? `${item.schoolClass.name} - ${item.schoolClass.section}` : '—'}</td>
                     <td>
                       <span className={`badge ${item.status === 'نشط' ? 'badge-success' : 'badge-warning'}`}>
@@ -135,8 +154,6 @@ const StudentsPage = () => {
                             firstName: item.user?.firstName || '',
                             lastName: item.user?.lastName || '',
                             username: item.user?.username || '',
-                            email: item.user?.email || '',
-                            password: '', // Empty on edit unless user wants to change it
                             status: item.status || 'نشط', 
                             emergencyContact: item.emergencyContact || '',
                             parentId: item.parent?.id || '',
@@ -172,30 +189,22 @@ const StudentsPage = () => {
               <h2>{editing ? 'تعديل طالب' : 'إضافة طالب جديد'}</h2>
               <button className="btn-icon" onClick={() => setShowModal(false)}><X size={20} /></button>
             </div>
-            <div className="modal-form">
+            <form onSubmit={handleSave} className="modal-form">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
                 <div className="form-group">
-                  <label>الاسم الأول</label>
+                  <label>الاسم الأول *</label>
                   <input className="input-field" value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})} required />
                 </div>
                 <div className="form-group">
-                  <label>الاسم الأخير</label>
+                  <label>الاسم الأخير *</label>
                   <input className="input-field" value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})} required />
                 </div>
               </div>
               <div className="form-group">
-                <label>اسم المستخدم</label>
-                <input className="input-field" value={form.username} onChange={e => setForm({...form, username: e.target.value})} required />
+                <label>معرف الطالب (اسم المستخدم - اختياري)</label>
+                <input className="input-field" placeholder="سيتم إنشاؤه تلقائياً إذا ترك فارغاً" value={form.username} onChange={e => setForm({...form, username: e.target.value})} />
               </div>
-              <div className="form-group">
-                <label>البريد الإلكتروني</label>
-                <input type="email" className="input-field" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
-              </div>
-              <div className="form-group">
-                <label>كلمة المرور {editing ? '(اتركه فارغاً لعدم التغيير)' : ''}</label>
-                <input type="password" className="input-field" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required={!editing} />
-              </div>
-              
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
                 <div className="form-group">
                   <label>ولي الأمر</label>
@@ -229,10 +238,12 @@ const StudentsPage = () => {
                 <input className="input-field" placeholder="رقم الطوارئ" value={form.emergencyContact} onChange={e => setForm({...form, emergencyContact: e.target.value})} />
               </div>
               <div className="modal-actions">
-                <button className="btn btn-primary" onClick={handleSave}>حفظ</button>
-                <button className="btn btn-ghost" onClick={() => setShowModal(false)}>إلغاء</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'جاري الحفظ...' : 'حفظ'}
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>إلغاء</button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
