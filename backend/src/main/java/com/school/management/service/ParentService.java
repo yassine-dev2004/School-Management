@@ -47,14 +47,12 @@ public class ParentService {
     }
 
     public List<Student> getChildrenByParentId(Long parentId) {
-        return parentRepository.findById(parentId)
-                .map(Parent::getChildren)
-                .orElse(Collections.emptyList());
+        return studentRepository.findByParentId(parentId);
     }
 
     public List<Student> getChildrenByUserId(Long userId) {
         return parentRepository.findByUserId(userId)
-                .map(Parent::getChildren)
+                .map(parent -> studentRepository.findByParentId(parent.getId()))
                 .orElse(Collections.emptyList());
     }
 
@@ -65,13 +63,18 @@ public class ParentService {
         if (parentOpt.isEmpty()) {
             dashboard.put("children", Collections.emptyList());
             dashboard.put("totalChildren", 0);
+            dashboard.put("averageScore", 0);
+            dashboard.put("totalPresent", 0);
+            dashboard.put("totalAbsent", 0);
+            dashboard.put("totalAttendanceRecords", 0);
+            dashboard.put("attendanceRate", 0);
             return dashboard;
         }
 
         Parent parent = parentOpt.get();
-        List<Student> children = parent.getChildren() != null ? parent.getChildren() : Collections.emptyList();
+        // Direct DB query for active children by parent ID to guarantee sync with Admin changes
+        List<Student> children = studentRepository.findByParentId(parent.getId());
 
-        // Build children data with grades and attendance
         List<Map<String, Object>> childrenData = new ArrayList<>();
         int totalGrades = 0;
         double totalScore = 0;
@@ -85,28 +88,28 @@ public class ParentService {
             childData.put("firstName", child.getUser() != null ? child.getUser().getFirstName() : "");
             childData.put("lastName", child.getUser() != null ? child.getUser().getLastName() : "");
             childData.put("email", child.getUser() != null ? child.getUser().getEmail() : "");
-            childData.put("status", child.getStatus());
-            childData.put("emergencyContact", child.getEmergencyContact());
+            childData.put("status", child.getStatus() != null ? child.getStatus() : "نشط");
+            childData.put("emergencyContact", child.getEmergencyContact() != null ? child.getEmergencyContact() : "");
 
             // Class info
             if (child.getSchoolClass() != null) {
                 Map<String, Object> classInfo = new HashMap<>();
                 classInfo.put("id", child.getSchoolClass().getId());
-                classInfo.put("name", child.getSchoolClass().getName());
-                classInfo.put("section", child.getSchoolClass().getSection());
+                classInfo.put("name", child.getSchoolClass().getName() != null ? child.getSchoolClass().getName() : "");
+                classInfo.put("section", child.getSchoolClass().getSection() != null ? child.getSchoolClass().getSection() : "");
                 childData.put("schoolClass", classInfo);
             }
 
-            // Grades
+            // Real-time Grades fetch
             List<Grade> grades = gradeRepository.findByStudentId(child.getId());
             List<Map<String, Object>> gradesList = new ArrayList<>();
             for (Grade g : grades) {
                 Map<String, Object> gradeMap = new HashMap<>();
                 gradeMap.put("id", g.getId());
-                gradeMap.put("subjectName", g.getSubject() != null ? g.getSubject().getName() : "");
-                gradeMap.put("examType", g.getExamType());
+                gradeMap.put("subjectName", g.getSubject() != null && g.getSubject().getName() != null ? g.getSubject().getName() : "مادة غير محددة");
+                gradeMap.put("examType", g.getExamType() != null ? g.getExamType() : "اختبار");
                 gradeMap.put("score", g.getScore());
-                gradeMap.put("comments", g.getComments());
+                gradeMap.put("comments", g.getComments() != null ? g.getComments() : "");
                 gradeMap.put("recordedDate", g.getRecordedDate());
                 gradesList.add(gradeMap);
 
@@ -117,7 +120,7 @@ public class ParentService {
             }
             childData.put("grades", gradesList);
 
-            // Attendance
+            // Real-time Attendance fetch
             List<Attendance> attendanceList = attendanceRepository.findByStudentId(child.getId());
             List<Map<String, Object>> attendanceData = new ArrayList<>();
             for (Attendance a : attendanceList) {
@@ -128,9 +131,10 @@ public class ParentService {
                 attendanceData.add(attMap);
 
                 totalAttendance++;
-                if ("Present".equalsIgnoreCase(a.getStatus()) || "حاضر".equals(a.getStatus())) {
+                String statusNorm = a.getStatus() != null ? a.getStatus().trim().toLowerCase() : "";
+                if ("present".equals(statusNorm) || "حاضر".equals(statusNorm)) {
                     totalPresent++;
-                } else if ("Absent".equalsIgnoreCase(a.getStatus()) || "غائب".equals(a.getStatus())) {
+                } else if ("absent".equals(statusNorm) || "غائب".equals(statusNorm)) {
                     totalAbsent++;
                 }
             }
@@ -153,7 +157,6 @@ public class ParentService {
 
     @Transactional
     public Parent createParent(ParentRequest request) {
-        // 1. Create User
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
@@ -169,7 +172,6 @@ public class ParentService {
 
         User savedUser = userRepository.save(user);
 
-        // 2. Create Parent
         Parent parent = new Parent();
         parent.setUser(savedUser);
         parent.setOccupation(request.getOccupation());
@@ -183,7 +185,6 @@ public class ParentService {
         Parent parent = parentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Parent not found"));
 
-        // Update User
         User user = parent.getUser();
         if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
         if (request.getLastName() != null) user.setLastName(request.getLastName());
@@ -194,7 +195,6 @@ public class ParentService {
         }
         userRepository.save(user);
 
-        // Update Parent
         if (request.getOccupation() != null) parent.setOccupation(request.getOccupation());
         if (request.getAddress() != null) parent.setAddress(request.getAddress());
 

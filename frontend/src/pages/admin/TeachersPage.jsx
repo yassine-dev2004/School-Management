@@ -62,9 +62,9 @@ const TeachersPage = () => {
       } else { 
         await api.post('/teachers', payload); 
       }
+      await loadItems();
       setShowModal(false);
       setEditing(null);
-      await loadItems();
     } catch (err) {
       console.error('Error saving teacher:', err);
       alert('فشل حفظ المعلم: ' + (err.response?.data?.message || err.message || 'خطأ أثناء الاتصال'));

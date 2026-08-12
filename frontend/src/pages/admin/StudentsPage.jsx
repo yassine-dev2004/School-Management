@@ -81,9 +81,9 @@ const StudentsPage = () => {
       } else {
         await api.post('/students', payload);
       }
+      await loadItems();
       setShowModal(false);
       setEditing(null);
-      await loadItems();
     } catch (err) {
       console.error('Error saving student:', err);
       alert('فشل حفظ الطالب: ' + (err.response?.data?.message || err.message || 'خطأ أثناء الاتصال'));

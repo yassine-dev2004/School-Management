@@ -77,9 +77,9 @@ const GradesPage = () => {
       } else { 
         await api.post('/grades', payload); 
       }
+      await loadItems();
       setShowModal(false); 
       setEditing(null);
-      await loadItems();
     } catch (err) {
       console.error('Error saving grade:', err);
       alert('فشل حفظ الدرجة: ' + (err.response?.data?.message || err.message || 'خطأ أثناء الاتصال'));

@@ -70,9 +70,9 @@ const AttendancePage = () => {
       } else {
         await api.post('/attendance', payload);
       }
+      await loadRecords();
       setShowModal(false);
       setEditing(null);
-      await loadRecords();
     } catch (err) {
       console.error('Error saving attendance:', err);
       alert('فشل تسجيل الحضور: ' + (err.response?.data?.message || err.message || 'خطأ أثناء الاتصال'));
