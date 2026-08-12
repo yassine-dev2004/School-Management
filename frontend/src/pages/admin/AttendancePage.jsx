@@ -82,16 +82,33 @@ const AttendancePage = () => {
   };
 
   const getStatusBadge = (status) => {
-    if (status === 'حاضر' || status === 'Present') return <span className="badge badge-success"><UserCheck size={12} /> حاضر</span>;
-    if (status === 'غائب' || status === 'Absent') return <span className="badge badge-danger"><UserX size={12} /> غائب</span>;
-    return <span className="badge badge-warning"><Clock size={12} /> متأخر</span>;
+    const s = String(status || '').toLowerCase().trim();
+    if (s === 'حاضر' || s === 'present') {
+      return <span className="badge badge-success"><UserCheck size={12} /> حاضر</span>;
+    }
+    if (s === 'غائب' || s === 'absent') {
+      return <span className="badge badge-danger"><UserX size={12} /> غائب</span>;
+    }
+    if (s === 'متأخر' || s === 'late') {
+      return <span className="badge badge-warning"><Clock size={12} /> متأخر</span>;
+    }
+    return <span className="badge badge-primary">{status || 'غير محدد'}</span>;
   };
 
   const safeRecords = Array.isArray(records) ? records : [];
   const stats = {
-    present: safeRecords.filter(r => r && (r.status === 'حاضر' || r.status === 'Present')).length,
-    absent: safeRecords.filter(r => r && (r.status === 'غائب' || r.status === 'Absent')).length,
-    late: safeRecords.filter(r => r && (r.status === 'متأخر' || r.status === 'Late')).length,
+    present: safeRecords.filter(r => {
+      const s = String(r?.status || '').toLowerCase().trim();
+      return s === 'حاضر' || s === 'present';
+    }).length,
+    absent: safeRecords.filter(r => {
+      const s = String(r?.status || '').toLowerCase().trim();
+      return s === 'غائب' || s === 'absent';
+    }).length,
+    late: safeRecords.filter(r => {
+      const s = String(r?.status || '').toLowerCase().trim();
+      return s === 'متأخر' || s === 'late';
+    }).length,
   };
 
   return (
@@ -142,7 +159,7 @@ const AttendancePage = () => {
                   <tr key={r.id}>
                     <td>{idx + 1}</td>
                     <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>
-                      {r.student?.user ? `${r.student.user.firstName} ${r.student.user.lastName}` : `طالب #${r.student?.id}`}
+                      {r.student?.user ? `${r.student.user.firstName} ${r.student.user.lastName}` : `طالب #${r.student?.id || ''}`}
                     </td>
                     <td>{r.student?.schoolClass ? `${r.student.schoolClass.name} - ${r.student.schoolClass.section}` : '—'}</td>
                     <td>{getStatusBadge(r.status)}</td>

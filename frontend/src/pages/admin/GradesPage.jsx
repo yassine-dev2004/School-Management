@@ -91,13 +91,16 @@ const GradesPage = () => {
   const filtered = (Array.isArray(items) ? items : []).filter(i => {
     if (!i) return false;
     const name = `${i.student?.user?.firstName || ''} ${i.student?.user?.lastName || ''}`;
-    return name.includes(search) || (i.subject?.name && i.subject.name.includes(search));
+    const subjectName = i.subject?.name || '';
+    return name.includes(search) || subjectName.includes(search);
   });
 
   const getScoreColor = (score) => {
-    if (score >= 90) return 'var(--success)';
-    if (score >= 70) return 'var(--primary)';
-    if (score >= 50) return '#f59e0b';
+    const num = Number(score);
+    if (isNaN(num)) return 'var(--text-main)';
+    if (num >= 90) return 'var(--success)';
+    if (num >= 70) return 'var(--primary)';
+    if (num >= 50) return '#f59e0b';
     return 'var(--danger)';
   };
 
@@ -146,40 +149,47 @@ const GradesPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((item, idx) => (
-                  <tr key={item.id}>
-                    <td>{idx + 1}</td>
-                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>
-                      {item.student?.user ? `${item.student.user.firstName} ${item.student.user.lastName}` : `طالب #${item.student?.id || ''}`}
-                    </td>
-                    <td>{item.subject?.name || '—'}</td>
-                    <td><span className="badge badge-primary">{item.examType}</span></td>
-                    <td>
-                      <span style={{ fontWeight: 700, color: getScoreColor(item.score), fontSize: '1.1rem' }}>
-                        {item.score}
-                      </span>
-                    </td>
-                    <td>{item.comments || '—'}</td>
-                    <td>{item.recordedDate ? new Date(item.recordedDate).toLocaleDateString('ar-EG-u-nu-latn') : '—'}</td>
-                    <td>
-                      <div className="table-actions">
-                        <button className="btn-icon" onClick={() => { 
-                          setEditing(item); 
-                          setForm({ 
-                            studentId: item.student?.id || '',
-                            subjectId: item.subject?.id || '',
-                            score: item.score || '', 
-                            examType: item.examType || 'اختبار شهري', 
-                            comments: item.comments || '',
-                            recordedDate: item.recordedDate || new Date().toISOString().split('T')[0]
-                          }); 
-                          setShowModal(true); 
-                        }}><Pencil size={16} /></button>
-                        <button className="btn-icon" onClick={() => handleDelete(item.id)} style={{ color: 'var(--danger)' }}><Trash2 size={16} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map((item, idx) => {
+                  const studentName = item.student?.user?.firstName ? `${item.student.user.firstName} ${item.student.user.lastName}` : (item.student?.id ? `طالب #${item.student.id}` : 'غير محدد');
+                  const subjectName = item.subject?.name || 'غير محدد';
+                  const scoreDisplay = (item.score !== null && item.score !== undefined) ? item.score : '—';
+                  const examTypeDisplay = item.examType || 'اختبار';
+                  const commentsDisplay = item.comments || '—';
+                  const dateDisplay = item.recordedDate ? new Date(item.recordedDate).toLocaleDateString('ar-EG-u-nu-latn') : '—';
+
+                  return (
+                    <tr key={item.id}>
+                      <td>{idx + 1}</td>
+                      <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{studentName}</td>
+                      <td><span className="badge badge-primary">{subjectName}</span></td>
+                      <td>{examTypeDisplay}</td>
+                      <td>
+                        <span style={{ fontWeight: 700, color: getScoreColor(item.score), fontSize: '1.1rem' }}>
+                          {scoreDisplay}
+                        </span>
+                      </td>
+                      <td>{commentsDisplay}</td>
+                      <td>{dateDisplay}</td>
+                      <td>
+                        <div className="table-actions">
+                          <button className="btn-icon" onClick={() => { 
+                            setEditing(item); 
+                            setForm({ 
+                              studentId: item.student?.id || '',
+                              subjectId: item.subject?.id || '',
+                              score: item.score !== null && item.score !== undefined ? item.score : '', 
+                              examType: item.examType || 'اختبار شهري', 
+                              comments: item.comments || '',
+                              recordedDate: item.recordedDate ? new Date(item.recordedDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+                            }); 
+                            setShowModal(true); 
+                          }}><Pencil size={16} /></button>
+                          <button className="btn-icon" onClick={() => handleDelete(item.id)} style={{ color: 'var(--danger)' }}><Trash2 size={16} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
