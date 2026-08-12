@@ -40,7 +40,7 @@ const ParentAnnouncementsPage = () => {
                   <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 'var(--spacing-xs)' }}>{item.title}</h3>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.7 }}>{item.content}</p>
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 'var(--spacing-sm)', display: 'block' }}>
-                    {item.datePosted ? new Date(item.datePosted).toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}
+                    {item.datePosted ? new Date(item.datePosted).toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}
                   </span>
                 </div>
               </div>

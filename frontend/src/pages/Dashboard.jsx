@@ -57,7 +57,7 @@ const AdminDashboard = () => {
         <h1 className="page-title">لوحة التحكم</h1>
         <div className="header-date">
           <Calendar size={16} />
-          <span>{new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+          <span>{new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
         </div>
       </div>
 
@@ -69,7 +69,7 @@ const AdminDashboard = () => {
             </div>
             <div className="stat-info">
               <span className="stat-label">{card.label}</span>
-              <span className="stat-number">{card.value.toLocaleString('ar-SA')}</span>
+              <span className="stat-number">{card.value}</span>
             </div>
             <div className="stat-trend">
               <TrendingUp size={16} />
@@ -113,21 +113,21 @@ const AdminDashboard = () => {
               <UserCheck size={20} color="var(--success)" />
               <div>
                 <span className="qs-label">نسبة الحضور اليوم</span>
-                <span className="qs-value">٩٢٪</span>
+                <span className="qs-value">92%</span>
               </div>
             </div>
             <div className="quick-stat-item">
               <BookOpen size={20} color="var(--primary)" />
               <div>
                 <span className="qs-label">الواجبات النشطة</span>
-                <span className="qs-value">١٥</span>
+                <span className="qs-value">15</span>
               </div>
             </div>
             <div className="quick-stat-item">
               <Users size={20} color="var(--accent)" />
               <div>
                 <span className="qs-label">طلاب جدد هذا الشهر</span>
-                <span className="qs-value">٨</span>
+                <span className="qs-value">8</span>
               </div>
             </div>
           </div>

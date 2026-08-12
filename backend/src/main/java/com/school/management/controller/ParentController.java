@@ -4,12 +4,16 @@ import jakarta.validation.Valid;
 import com.school.management.entity.Parent;
 import com.school.management.entity.Student;
 import com.school.management.service.ParentService;
+import com.school.management.security.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -37,6 +41,31 @@ public class ParentController {
     @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('PARENT')")
     public List<Student> getChildren(@PathVariable Long id) {
         return parentService.getChildrenByParentId(id);
+    }
+
+    /**
+     * Parent dashboard — returns all children with their grades, attendance, class info.
+     * Uses the JWT token to identify the logged-in parent.
+     */
+    @GetMapping("/my-dashboard")
+    @PreAuthorize("hasAuthority('PARENT')")
+    public ResponseEntity<Map<String, Object>> getMyDashboard() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+        Map<String, Object> dashboard = parentService.getParentDashboard(userDetails.getId());
+        return ResponseEntity.ok(dashboard);
+    }
+
+    /**
+     * Get children for the currently logged-in parent (by JWT user ID).
+     */
+    @GetMapping("/my-children")
+    @PreAuthorize("hasAuthority('PARENT')")
+    public ResponseEntity<List<Student>> getMyChildren() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+        List<Student> children = parentService.getChildrenByUserId(userDetails.getId());
+        return ResponseEntity.ok(children);
     }
 
     @PostMapping

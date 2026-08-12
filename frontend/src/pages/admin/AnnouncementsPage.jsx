@@ -69,7 +69,7 @@ const AnnouncementsPage = () => {
                     <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.title}</td>
                     <td style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.content}</td>
                     <td><span className="badge badge-primary">{roleLabels[item.targetRole] || item.targetRole}</span></td>
-                    <td>{item.datePosted ? new Date(item.datePosted).toLocaleDateString('ar-SA') : '—'}</td>
+                    <td>{item.datePosted ? new Date(item.datePosted).toLocaleDateString('ar-EG-u-nu-latn') : '—'}</td>
                     <td>
                       <div className="table-actions">
                         <button className="btn-icon" onClick={() => { setEditing(item); setForm({ title: item.title, content: item.content, targetRole: item.targetRole }); setShowModal(true); }}><Pencil size={16} /></button>

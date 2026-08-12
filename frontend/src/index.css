@@ -379,6 +379,11 @@ select.input-field {
   color: var(--primary);
   border: 1px solid rgba(99, 102, 241, 0.2);
 }
+.badge-accent {
+  background: rgba(6, 182, 212, 0.1);
+  color: #06b6d4;
+  border: 1px solid rgba(6, 182, 212, 0.2);
+}
 
 /* Data Table */
 .data-table-wrapper {
