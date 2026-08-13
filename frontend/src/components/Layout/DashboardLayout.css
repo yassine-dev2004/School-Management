@@ -19,8 +19,7 @@
 /* Top Bar */
 .top-bar {
   height: var(--header-height);
-  background: var(--bg-card);
-  backdrop-filter: blur(16px);
+  background: #ffffff;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -51,11 +50,11 @@
   position: absolute;
   top: 8px;
   left: 8px;
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   background: var(--danger);
   border-radius: 50%;
-  border: 2px solid var(--bg-card-solid);
+  border: 2px solid #fff;
 }
 
 .top-bar-user {
@@ -73,16 +72,16 @@
 }
 
 .top-bar-avatar {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--primary), var(--accent));
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .top-bar-user-info {
@@ -91,12 +90,12 @@
 }
 
 .top-bar-name {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
 }
 
 .top-bar-role {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: var(--text-muted);
 }
 
@@ -119,3 +118,4 @@
     transform: translateX(0);
   }
 }
+

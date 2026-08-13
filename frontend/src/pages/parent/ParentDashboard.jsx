@@ -43,10 +43,10 @@ const ParentDashboard = () => {
   }
 
   const statCards = [
-    { icon: Users, label: 'عدد الأبناء', value: dashboard?.totalChildren || 0, gradient: 'linear-gradient(135deg, #6366f1, #818cf8)' },
-    { icon: TrendingUp, label: 'متوسط الدرجات', value: dashboard?.averageScore || 0, gradient: 'linear-gradient(135deg, #10b981, #34d399)' },
-    { icon: UserCheck, label: 'نسبة الحضور', value: `${dashboard?.attendanceRate || 0}%`, gradient: 'linear-gradient(135deg, #06b6d4, #22d3ee)' },
-    { icon: AlertCircle, label: 'أيام الغياب', value: dashboard?.totalAbsent || 0, gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24)' },
+    { icon: Users, label: 'عدد الأبناء', value: dashboard?.totalChildren || 0, gradient: '#1a1a1a' },
+    { icon: TrendingUp, label: 'متوسط الدرجات', value: dashboard?.averageScore || 0, gradient: '#333333' },
+    { icon: UserCheck, label: 'نسبة الحضور', value: `${dashboard?.attendanceRate || 0}%`, gradient: '#4a4a4a' },
+    { icon: AlertCircle, label: 'أيام الغياب', value: dashboard?.totalAbsent || 0, gradient: '#666666' },
   ];
 
   return (

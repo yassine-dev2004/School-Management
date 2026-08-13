@@ -67,7 +67,7 @@ const ChildrenPage = () => {
                 onClick={() => { setSelectedChild(child); setActiveTab('grades'); }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 'var(--radius-full)', background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1.1rem' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 'var(--radius-full)', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1.1rem' }}>
                     {child.firstName?.charAt(0)}
                   </div>
                   <div>
@@ -98,7 +98,7 @@ const ChildrenPage = () => {
               {/* Child Info Header */}
               <div style={{ padding: 'var(--spacing-lg)', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-subtle)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-full)', background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-full)', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700 }}>
                     {selectedChild.firstName?.charAt(0)}
                   </div>
                   <div>

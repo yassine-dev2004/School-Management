@@ -69,7 +69,7 @@ const SettingsPage = () => {
       ) : (
         <div className="glass-panel" style={{ padding: 'var(--spacing-xl)', maxWidth: 640 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)', marginBottom: 'var(--spacing-xl)', borderBottom: '1px solid var(--border-color)', pb: 'var(--spacing-lg)' }}>
-            <div style={{ width: 68, height: 68, borderRadius: 'var(--radius-full)', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1.6rem', fontWeight: 800, boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }}>
+            <div style={{ width: 68, height: 68, borderRadius: 'var(--radius-full)', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1.6rem', fontWeight: 800, boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
               {user?.username?.charAt(0)?.toUpperCase() || 'م'}
             </div>
             <div>

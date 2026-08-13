@@ -81,10 +81,10 @@ const AdminDashboard = () => {
   };
 
   const statCards = [
-    { icon: Users, label: 'إجمالي الطلاب', value: stats.students, link: '/admin/students', gradient: 'linear-gradient(135deg, #6366f1, #818cf8)' },
-    { icon: GraduationCap, label: 'إجمالي المعلمين', value: stats.teachers, link: '/admin/teachers', gradient: 'linear-gradient(135deg, #10b981, #34d399)' },
-    { icon: School, label: 'الفصول النشطة', value: stats.classes, link: '/admin/classes', gradient: 'linear-gradient(135deg, #06b6d4, #22d3ee)' },
-    { icon: BookOpen, label: 'المواد الدراسية', value: stats.subjects, link: '/admin/subjects', gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24)' },
+    { icon: Users, label: 'إجمالي الطلاب', value: stats.students, link: '/admin/students', gradient: '#1a1a1a' },
+    { icon: GraduationCap, label: 'إجمالي المعلمين', value: stats.teachers, link: '/admin/teachers', gradient: '#333333' },
+    { icon: School, label: 'الفصول النشطة', value: stats.classes, link: '/admin/classes', gradient: '#4a4a4a' },
+    { icon: BookOpen, label: 'المواد الدراسية', value: stats.subjects, link: '/admin/subjects', gradient: '#666666' },
   ];
 
   return (
