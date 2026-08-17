@@ -17,7 +17,7 @@ public class Student {
     @JoinColumn(name = "id")
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "parent_id")
     @JsonIgnoreProperties({"children", "hibernateLazyInitializer", "handler"})
     private Parent parent;

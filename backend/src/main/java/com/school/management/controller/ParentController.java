@@ -24,7 +24,7 @@ public class ParentController {
     private ParentService parentService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMINISTRATOR')")
+    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER')")
     public List<Parent> getAllParents() {
         return parentService.getAllParents();
     }

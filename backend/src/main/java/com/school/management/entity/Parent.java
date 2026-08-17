@@ -20,7 +20,7 @@ public class Parent {
     private String occupation;
     private String address;
 
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonIgnoreProperties({"parent", "hibernateLazyInitializer", "handler"})
     private List<Student> children;
 
