@@ -3,7 +3,6 @@ package com.school.management.payload.request;
 import jakarta.validation.constraints.NotBlank;
 
 public class StudentRequest {
-    @NotBlank(message = "Username is required")
     private String username;
 
     private String email;

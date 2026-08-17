@@ -359,27 +359,29 @@ const StudentsPage = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
-                <div className="form-group">
-                  <label>اسم المستخدم (معرف الدخول)</label>
-                  <input
-                    className="input-field"
-                    placeholder="تلقائي إذا ترك فارغاً"
-                    value={form.username}
-                    onChange={(e) => setForm({ ...form, username: e.target.value })}
-                  />
+              {editing && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
+                  <div className="form-group">
+                    <label>اسم المستخدم (معرف الدخول)</label>
+                    <input
+                      className="input-field"
+                      placeholder="اسم المستخدم"
+                      value={form.username}
+                      onChange={(e) => setForm({ ...form, username: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>كلمة المرور (اتركه فارغاً لعدم التغيير)</label>
+                    <input
+                      type="password"
+                      className="input-field"
+                      placeholder="••••••••"
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>كلمة المرور {editing ? '(اتركه فارغاً لعدم التغيير)' : ''}</label>
-                  <input
-                    type="password"
-                    className="input-field"
-                    placeholder={editing ? '••••••••' : 'افتراضي: student123'}
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  />
-                </div>
-              </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
                 <div className="form-group">

@@ -23,32 +23,36 @@ public class DataSeeder implements CommandLineRunner {
     private PasswordEncoder passwordEncoder;
 
     @Override
-    public void run(String... args) throws Exception {
-        // 1. Seed Roles if missing
-        for (RoleName roleName : RoleName.values()) {
-            if (!roleRepository.findByName(roleName).isPresent()) {
-                Role role = new Role();
-                role.setName(roleName);
-                roleRepository.save(role);
+    public void run(String... args) {
+        try {
+            // 1. Seed Roles if missing
+            for (RoleName roleName : RoleName.values()) {
+                if (roleRepository.findByName(roleName).isEmpty()) {
+                    Role role = new Role();
+                    role.setName(roleName);
+                    roleRepository.save(role);
+                }
             }
-        }
 
-        // 2. Seed Default Administrator if missing
-        if (!userRepository.existsByUsername("admin")) {
-            User admin = new User();
-            admin.setUsername("admin");
-            admin.setEmail("admin@school.com");
-            admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setFirstName("مدير");
-            admin.setLastName("النظام");
-            admin.setPhone("0000000000");
+            // 2. Seed Default Administrator if missing
+            if (!userRepository.existsByUsername("admin")) {
+                User admin = new User();
+                admin.setUsername("admin");
+                admin.setEmail("admin@school.com");
+                admin.setPassword(passwordEncoder.encode("admin123"));
+                admin.setFirstName("مدير");
+                admin.setLastName("النظام");
+                admin.setPhone("0000000000");
 
-            Set<Role> roles = new HashSet<>();
-            roleRepository.findByName(RoleName.ADMINISTRATOR).ifPresent(roles::add);
-            admin.setRoles(roles);
+                Set<Role> roles = new HashSet<>();
+                roleRepository.findByName(RoleName.ADMINISTRATOR).ifPresent(roles::add);
+                admin.setRoles(roles);
 
-            userRepository.save(admin);
-            System.out.println(">>> DataSeeder: Initial Admin account 'admin' / 'admin123' created successfully.");
+                userRepository.save(admin);
+                System.out.println(">>> DataSeeder: Initial Admin account 'admin' / 'admin123' created successfully.");
+            }
+        } catch (Exception e) {
+            System.err.println(">>> DataSeeder warning: " + e.getMessage());
         }
     }
 }

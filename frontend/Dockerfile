@@ -25,5 +25,7 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
-# Railway injects PORT env variable
-CMD sed -i "s/listen 80/listen $PORT/g; s/listen \[::\]:80/listen [::]:$PORT/g" /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'
+# Railway injects PORT env variable, default to 80
+ENV PORT=80
+CMD sed -i "s/listen 80/listen ${PORT:-80}/g; s/listen \[::\]:80/listen [::]:${PORT:-80}/g" /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'
+

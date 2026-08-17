@@ -23,7 +23,7 @@ public class AnnouncementService {
     }
 
     public List<Announcement> getAnnouncementsByTargetRole(String targetRole) {
-        return announcementRepository.findByTargetRoleOrTargetRoleIsNull(targetRole);
+        return announcementRepository.findByTargetRoleOrAll(targetRole);
     }
 
     public Announcement saveAnnouncement(Announcement announcement) {

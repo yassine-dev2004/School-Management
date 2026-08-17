@@ -2,19 +2,21 @@
 FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 COPY pom.xml .
-# Download dependencies first to leverage Docker cache
-RUN mvn dependency:go-offline -B
+RUN mvn dependency:resolve -B
 COPY src ./src
-# Build the application skipping tests to speed up deployment
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -B
 
 # Stage 2: Run the application
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=build /app/target/management-0.0.1-SNAPSHOT.jar app.jar
 
-# Railway injects the PORT environment variable
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
+COPY --from=build /app/target/*.jar app.jar
+
 ENV PORT=8080
 EXPOSE ${PORT}
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
+
