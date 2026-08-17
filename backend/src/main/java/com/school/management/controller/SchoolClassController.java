@@ -41,21 +41,18 @@ public class SchoolClassController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('ADMINISTRATOR')")
-    public SchoolClass createClass(@Valid @RequestBody SchoolClass schoolClass) {
-        return schoolClassService.saveClass(schoolClass);
+    public SchoolClass createClass(@Valid @RequestBody com.school.management.payload.request.ClassRequest request) {
+        return schoolClassService.createClass(request);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMINISTRATOR')")
-    public ResponseEntity<SchoolClass> updateClass(@PathVariable Long id, @Valid @RequestBody SchoolClass classDetails) {
-        return schoolClassService.getClassById(id)
-                .map(schoolClass -> {
-                    schoolClass.setName(classDetails.getName());
-                    schoolClass.setSection(classDetails.getSection());
-                    schoolClass.setTeacher(classDetails.getTeacher());
-                    return ResponseEntity.ok(schoolClassService.saveClass(schoolClass));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<SchoolClass> updateClass(@PathVariable Long id, @Valid @RequestBody com.school.management.payload.request.ClassRequest request) {
+        try {
+            return ResponseEntity.ok(schoolClassService.updateClass(id, request));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")

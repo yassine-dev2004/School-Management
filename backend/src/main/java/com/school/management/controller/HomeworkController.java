@@ -40,21 +40,18 @@ public class HomeworkController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER')")
-    public Homework createHomework(@Valid @RequestBody Homework homework) {
-        return homeworkService.saveHomework(homework);
+    public Homework createHomework(@Valid @RequestBody com.school.management.payload.request.HomeworkRequest request) {
+        return homeworkService.createHomework(request);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER')")
-    public ResponseEntity<Homework> updateHomework(@PathVariable Long id, @Valid @RequestBody Homework homeworkDetails) {
-        return homeworkService.getHomeworkById(id)
-                .map(homework -> {
-                    homework.setTitle(homeworkDetails.getTitle());
-                    homework.setDescription(homeworkDetails.getDescription());
-                    homework.setDueDate(homeworkDetails.getDueDate());
-                    return ResponseEntity.ok(homeworkService.saveHomework(homework));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Homework> updateHomework(@PathVariable Long id, @Valid @RequestBody com.school.management.payload.request.HomeworkRequest request) {
+        try {
+            return ResponseEntity.ok(homeworkService.updateHomework(id, request));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")

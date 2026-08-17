@@ -1,5 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
+import ToastContainer from './components/ToastContainer';
+import ConfirmModal from './components/ConfirmModal';
 import DashboardLayout from './components/Layout/DashboardLayout';
 import Login from './pages/Login';
 import AdminDashboard from './pages/Dashboard';
@@ -16,6 +19,7 @@ import SettingsPage from './pages/admin/SettingsPage';
 import ParentDashboard from './pages/parent/ParentDashboard';
 import ChildrenPage from './pages/parent/ChildrenPage';
 import ParentAnnouncementsPage from './pages/parent/ParentAnnouncementsPage';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -57,18 +61,21 @@ const AppRoutes = () => {
   );
 };
 
-import ErrorBoundary from './components/ErrorBoundary';
-
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ErrorBoundary>
-          <AppRoutes />
-        </ErrorBoundary>
+        <ToastProvider>
+          <ErrorBoundary>
+            <AppRoutes />
+            <ToastContainer />
+            <ConfirmModal />
+          </ErrorBoundary>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   );
 }
 
 export default App;
+

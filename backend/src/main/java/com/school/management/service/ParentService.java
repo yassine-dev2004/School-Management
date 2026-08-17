@@ -157,15 +157,35 @@ public class ParentService {
 
     @Transactional
     public Parent createParent(ParentRequest request) {
+        String username = request.getUsername();
+        if (username == null || username.trim().isEmpty()) {
+            username = (request.getFirstName() + (int)(Math.random() * 9000 + 1000)).toLowerCase().replaceAll("\\s+", "");
+        }
+        if (userRepository.existsByUsername(username)) {
+            username = username + (int)(Math.random() * 900 + 100);
+        }
+
+        String email = request.getEmail();
+        if (email == null || email.trim().isEmpty()) {
+            email = username + "@parent.school";
+        }
+        if (userRepository.existsByEmail(email)) {
+            email = username + "_" + System.currentTimeMillis() % 10000 + "@parent.school";
+        }
+
         User user = new User();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPassword(encoder.encode(request.getPassword()));
+        user.setUsername(username);
+        user.setEmail(email);
+        String pwd = (request.getPassword() != null && !request.getPassword().trim().isEmpty()) ? request.getPassword().trim() : "parent123";
+        user.setPassword(encoder.encode(pwd));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
 
         Role parentRole = roleRepository.findByName(RoleName.PARENT)
-                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                .orElseThrow(() -> new RuntimeException("Error: PARENT Role is not found in database."));
         Set<Role> roles = new HashSet<>();
         roles.add(parentRole);
         user.setRoles(roles);
@@ -183,15 +203,29 @@ public class ParentService {
     @Transactional
     public Parent updateParent(Long id, ParentRequest request) {
         Parent parent = parentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Parent not found"));
+                .orElseThrow(() -> new RuntimeException("Parent not found with ID: " + id));
 
         User user = parent.getUser();
         if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
         if (request.getLastName() != null) user.setLastName(request.getLastName());
-        if (request.getEmail() != null) user.setEmail(request.getEmail());
-        if (request.getUsername() != null) user.setUsername(request.getUsername());
-        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-            user.setPassword(encoder.encode(request.getPassword()));
+        if (request.getPhone() != null) user.setPhone(request.getPhone());
+
+        if (request.getUsername() != null && !request.getUsername().trim().isEmpty() && !request.getUsername().equals(user.getUsername())) {
+            if (userRepository.existsByUsername(request.getUsername())) {
+                throw new IllegalArgumentException("اسم المستخدم مستخدم بالفعل / Username is already taken");
+            }
+            user.setUsername(request.getUsername().trim());
+        }
+
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty() && !request.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new IllegalArgumentException("البريد الإلكتروني مستخدم بالفعل / Email is already in use");
+            }
+            user.setEmail(request.getEmail().trim());
+        }
+
+        if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
+            user.setPassword(encoder.encode(request.getPassword().trim()));
         }
         userRepository.save(user);
 
@@ -207,6 +241,13 @@ public class ParentService {
 
     @Transactional
     public void deleteParent(Long id) {
+        // Safe delete: Disassociate children first so foreign key doesn't block deletion
+        List<Student> children = studentRepository.findByParentId(id);
+        for (Student child : children) {
+            child.setParent(null);
+            studentRepository.save(child);
+        }
+
         parentRepository.deleteById(id);
         userRepository.deleteById(id);
     }

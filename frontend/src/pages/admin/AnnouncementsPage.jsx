@@ -1,103 +1,360 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Pencil, Trash2, X, Megaphone } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, Bell, Download, Users, Tag, Calendar } from 'lucide-react';
 import api from '../../api/axios';
+import { useToast } from '../../context/ToastContext';
 import './CrudPage.css';
 
 const AnnouncementsPage = () => {
+  const { showToast, confirm } = useToast();
   const [items, setItems] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ title: '', content: '', targetRole: 'ALL' });
+  const [form, setForm] = useState({
+    title: '',
+    content: '',
+    targetRole: 'ALL',
+    targetClassId: '',
+  });
 
-  useEffect(() => { loadItems(); }, []);
+  useEffect(() => {
+    loadItems();
+    loadClasses();
+  }, []);
+
+  const loadClasses = async () => {
+    try {
+      const res = await api.get('/classes');
+      setClasses(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setClasses([]);
+    }
+  };
 
   const loadItems = async () => {
     setLoading(true);
-    try { const res = await api.get('/announcements'); setItems(res.data); }
-    catch {
-      setItems([
-        { id: 1, title: 'بداية الفصل الدراسي الثاني', content: 'يسعدنا إبلاغكم ببدء الفصل الدراسي الثاني يوم الأحد القادم. يُرجى الالتزام بالمواعيد.', targetRole: 'ALL', datePosted: '2025-06-01T10:00:00' },
-        { id: 2, title: 'اجتماع أولياء الأمور', content: 'سيتم عقد اجتماع أولياء الأمور يوم الثلاثاء القادم الساعة 4 مساءً في القاعة الرئيسية.', targetRole: 'PARENT', datePosted: '2025-06-05T14:30:00' },
-        { id: 3, title: 'تحديث جدول الحصص', content: 'تم تحديث جدول الحصص الأسبوعي. يُرجى مراجعته من خلال لوحة التحكم.', targetRole: 'TEACHER', datePosted: '2025-06-08T09:00:00' },
-      ]);
-    }
-    setLoading(false);
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الإعلان؟')) return;
-    try { await api.delete(`/announcements/${id}`); } catch {}
-    setItems(items.filter(i => i.id !== id));
-  };
-
-  const handleSave = async () => {
     try {
-      if (editing) { await api.put(`/announcements/${editing.id}`, form); }
-      else { await api.post('/announcements', form); }
-      loadItems();
-    } catch {}
-    setShowModal(false); setEditing(null);
+      const res = await api.get('/announcements');
+      setItems(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setItems([]);
+      showToast('فشل تحميل الإعلانات المدرسية', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filtered = items.filter(i => i.title?.includes(search) || i.content?.includes(search));
+  const handleDelete = async (id, title) => {
+    const isConfirmed = await confirm({
+      title: 'حذف إعلان',
+      message: `هل أنت متأكد من حذف الإعلان "${title}"؟`,
+      confirmText: 'حذف الإعلان',
+      type: 'danger',
+    });
 
-  const roleLabels = { ALL: 'الجميع', PARENT: 'أولياء الأمور', TEACHER: 'المعلمين', STUDENT: 'الطلاب' };
+    if (!isConfirmed) return;
+
+    try {
+      await api.delete(`/announcements/${id}`);
+      setItems((prev) => prev.filter((i) => i.id !== id));
+      showToast('تم حذف الإعلان بنجاح', 'success');
+    } catch (err) {
+      showToast('فشل حذف الإعلان: ' + (err.response?.data?.message || err.message), 'error');
+    }
+  };
+
+  const handleOpenModal = (ann = null) => {
+    if (ann) {
+      setEditing(ann);
+      setForm({
+        title: ann.title || '',
+        content: ann.content || '',
+        targetRole: ann.targetRole || 'ALL',
+        targetClassId: ann.targetClass?.id ? String(ann.targetClass.id) : '',
+      });
+    } else {
+      setEditing(null);
+      setForm({
+        title: '',
+        content: '',
+        targetRole: 'ALL',
+        targetClassId: '',
+      });
+    }
+    setShowModal(true);
+  };
+
+  const handleSave = async (e) => {
+    if (e) e.preventDefault();
+    if (!form.title.trim() || !form.content.trim()) {
+      showToast('الرجاء إدخال عنوان الإعلان والمحتوى', 'warning');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const payload = {
+        title: form.title.trim(),
+        content: form.content.trim(),
+        targetRole: form.targetRole,
+        targetClass: form.targetClassId ? { id: Number(form.targetClassId) } : null,
+      };
+
+      if (editing) {
+        await api.put(`/announcements/${editing.id}`, payload);
+        showToast('تم تحديث الإعلان بنجاح ✨', 'success');
+      } else {
+        await api.post('/announcements', payload);
+        showToast('تم نشر الإعلان المدرسي بنجاح 🎉', 'success');
+      }
+
+      setShowModal(false);
+      setEditing(null);
+      await loadItems();
+    } catch (err) {
+      showToast('فشل حفظ الإعلان: ' + (err.response?.data?.message || err.message || 'خطأ أثناء الاتصال'), 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const exportCSV = () => {
+    if (items.length === 0) {
+      showToast('لا توجد إعلانات للتصدير', 'warning');
+      return;
+    }
+    const headers = ['#', 'عنوان الإعلان', 'الفئة المستهدفة', 'الفصل', 'المحتوى', 'تاريخ النشر'];
+    const rows = filtered.map((a, idx) => [
+      idx + 1,
+      a.title || '',
+      a.targetRole || 'الكل',
+      a.targetClass ? `${a.targetClass.name} - ${a.targetClass.section}` : 'عام للجميع',
+      a.content || '',
+      a.datePosted ? new Date(a.datePosted).toLocaleDateString('ar-EG-u-nu-latn') : '',
+    ]);
+
+    const csvContent = '\uFEFF' + [headers, ...rows].map((e) => e.map((val) => `"${val}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `announcements_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('تم تصدير الإعلانات بنجاح', 'success');
+  };
+
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case 'ALL':
+        return 'الجميع (عام)';
+      case 'STUDENT':
+        return 'الطلاب فقط';
+      case 'TEACHER':
+        return 'المعلمون فقط';
+      case 'PARENT':
+        return 'أولياء الأمور فقط';
+      default:
+        return role;
+    }
+  };
+
+  const filtered = (Array.isArray(items) ? items : []).filter((i) => {
+    if (!i) return false;
+    const title = (i.title || '').toLowerCase();
+    const content = (i.content || '').toLowerCase();
+    return title.includes(search.toLowerCase()) || content.includes(search.toLowerCase());
+  });
 
   return (
     <div className="crud-page animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title">الإعلانات</h1>
-        <button className="btn btn-primary" onClick={() => { setEditing(null); setForm({ title: '', content: '', targetRole: 'ALL' }); setShowModal(true); }}>
-          <Plus size={18} /> إضافة إعلان
-        </button>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h1 className="page-title">الإعلانات المدرسية</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
+            نشر التعاميم والأخبار والتنبيهات الموجهة للمجتمع المدرسي
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="btn btn-ghost" onClick={exportCSV}>
+            <Download size={18} /> تصدير Excel/CSV
+          </button>
+          <button className="btn btn-primary" onClick={() => handleOpenModal(null)}>
+            <Plus size={18} /> إضافة إعلان جديد
+          </button>
+        </div>
       </div>
-      <div className="crud-toolbar glass-panel">
-        <div className="search-bar"><Search size={18} /><input className="input-field" placeholder="البحث في الإعلانات..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <span className="result-count">{filtered.length} إعلان</span>
+
+      <div className="crud-toolbar glass-panel" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="search-bar" style={{ flex: 1, minWidth: '240px' }}>
+          <Search size={18} />
+          <input
+            className="input-field"
+            placeholder="البحث في عناوين ونصوص الإعلانات..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <span className="result-count badge badge-primary">{filtered.length} إعلان</span>
       </div>
-      {loading ? <div className="spinner"></div> : (
+
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+          <div className="spinner"></div>
+        </div>
+      ) : (
         <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
           <div className="data-table-wrapper">
             <table className="data-table">
-              <thead><tr><th>#</th><th>العنوان</th><th>المحتوى</th><th>الفئة المستهدفة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>عنوان الإعلان</th>
+                  <th>الفئة المستهدفة</th>
+                  <th>الفصل المخصص</th>
+                  <th>تاريخ النشر</th>
+                  <th>إجراءات</th>
+                </tr>
+              </thead>
               <tbody>
-                {filtered.map((item, idx) => (
-                  <tr key={item.id}>
-                    <td>{idx + 1}</td>
-                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.title}</td>
-                    <td style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.content}</td>
-                    <td><span className="badge badge-primary">{roleLabels[item.targetRole] || item.targetRole}</span></td>
-                    <td>{item.datePosted ? new Date(item.datePosted).toLocaleDateString('ar-EG-u-nu-latn') : '—'}</td>
-                    <td>
-                      <div className="table-actions">
-                        <button className="btn-icon" onClick={() => { setEditing(item); setForm({ title: item.title, content: item.content, targetRole: item.targetRole }); setShowModal(true); }}><Pencil size={16} /></button>
-                        <button className="btn-icon" onClick={() => handleDelete(item.id)} style={{ color: 'var(--danger)' }}><Trash2 size={16} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map((item, idx) => {
+                  const dateStr = item.datePosted
+                    ? new Date(item.datePosted).toLocaleDateString('ar-EG-u-nu-latn')
+                    : '—';
+
+                  return (
+                    <tr key={item.id}>
+                      <td>{idx + 1}</td>
+                      <td>
+                        <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.98rem' }}>{item.title}</div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '2px', maxWidth: '340px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.content}
+                        </div>
+                      </td>
+                      <td>
+                        <span className="badge badge-accent">{getRoleLabel(item.targetRole)}</span>
+                      </td>
+                      <td>
+                        {item.targetClass ? (
+                          <span className="badge badge-primary">{item.targetClass.name} - {item.targetClass.section}</span>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)' }}>مدرسة كاملة</span>
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
+                          <Calendar size={14} color="var(--primary)" />
+                          <span>{dateStr}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="table-actions">
+                          <button className="btn-icon" title="تعديل" onClick={() => handleOpenModal(item)}>
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            className="btn-icon"
+                            title="حذف"
+                            onClick={() => handleDelete(item.id, item.title)}
+                            style={{ color: 'var(--danger)' }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-          {filtered.length === 0 && <div className="empty-state"><Megaphone size={48} /><p>لا توجد إعلانات</p></div>}
+          {filtered.length === 0 && (
+            <div className="empty-state">
+              <Bell size={48} />
+              <p>لا توجد إعلانات منشورة</p>
+            </div>
+          )}
         </div>
       )}
+
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header"><h2>{editing ? 'تعديل إعلان' : 'إضافة إعلان جديد'}</h2><button className="btn-icon" onClick={() => setShowModal(false)}><X size={20} /></button></div>
-            <div className="modal-form">
-              <div className="form-group"><label>العنوان</label><input className="input-field" value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
-              <div className="form-group"><label>المحتوى</label><textarea className="input-field" rows={4} value={form.content} onChange={e => setForm({...form, content: e.target.value})} /></div>
-              <div className="form-group"><label>الفئة المستهدفة</label>
-                <select className="input-field" value={form.targetRole} onChange={e => setForm({...form, targetRole: e.target.value})}>
-                  <option value="ALL">الجميع</option><option value="PARENT">أولياء الأمور</option><option value="TEACHER">المعلمين</option><option value="STUDENT">الطلاب</option>
-                </select>
-              </div>
-              <div className="modal-actions"><button className="btn btn-primary" onClick={handleSave}>نشر</button><button className="btn btn-ghost" onClick={() => setShowModal(false)}>إلغاء</button></div>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '560px' }}>
+            <div className="modal-header">
+              <h2>{editing ? 'تعديل إعلان' : 'إضافة إعلان جديد'}</h2>
+              <button className="btn-icon" onClick={() => setShowModal(false)}>
+                <X size={20} />
+              </button>
             </div>
+            <form onSubmit={handleSave} className="modal-form">
+              <div className="form-group">
+                <label>عنوان الإعلان *</label>
+                <input
+                  className="input-field"
+                  placeholder="مثال: موعد اختبارات الفصل الدراسي الأول"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
+                <div className="form-group">
+                  <label>الفئة المستهدفة</label>
+                  <select
+                    className="input-field"
+                    value={form.targetRole}
+                    onChange={(e) => setForm({ ...form, targetRole: e.target.value })}
+                  >
+                    <option value="ALL">جميع المستخدمين (عام)</option>
+                    <option value="STUDENT">الطلاب فقط</option>
+                    <option value="TEACHER">المعلمون فقط</option>
+                    <option value="PARENT">أولياء الأمور فقط</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>فصل دراسي محدد (اختياري)</label>
+                  <select
+                    className="input-field"
+                    value={form.targetClassId}
+                    onChange={(e) => setForm({ ...form, targetClassId: e.target.value })}
+                  >
+                    <option value="">-- المدرسة بالكامل --</option>
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} - {c.section}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>محتوى وتفاصيل الإعلان *</label>
+                <textarea
+                  className="input-field"
+                  rows={5}
+                  placeholder="اكتب تفاصيل الإعلان والتعليمات كاملة هنا..."
+                  value={form.content}
+                  onChange={(e) => setForm({ ...form, content: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="modal-actions" style={{ marginTop: '16px' }}>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'جاري النشر...' : editing ? 'حفظ التعديلات' : 'نشر الإعلان'}
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>
+                  إلغاء
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

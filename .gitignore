@@ -19,6 +19,13 @@ target/
 *.iml
 *.iws
 
+# Flutter & Mobile
+*.apk
+*.aab
+.flutter-plugins
+.flutter-plugins-dependencies
+
 # OS
 .DS_Store
 Thumbs.db
+

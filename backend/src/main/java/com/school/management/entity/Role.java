@@ -1,15 +1,9 @@
 package com.school.management.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "roles")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Role {
     
     @Id
@@ -19,4 +13,27 @@ public class Role {
     @Enumerated(EnumType.STRING)
     @Column(length = 20, unique = true)
     private RoleName name;
+
+    public Role() {}
+
+    public Role(Long id, RoleName name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public RoleName getName() {
+        return name;
+    }
+
+    public void setName(RoleName name) {
+        this.name = name;
+    }
 }
