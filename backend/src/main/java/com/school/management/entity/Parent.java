@@ -21,7 +21,7 @@ public class Parent {
     private String address;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JsonIgnoreProperties({"parent", "hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"parent", "schoolClass", "hibernateLazyInitializer", "handler"})
     private List<Student> children;
 
     public Parent() {}

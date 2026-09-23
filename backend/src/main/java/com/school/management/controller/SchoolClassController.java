@@ -20,13 +20,13 @@ public class SchoolClassController {
     private SchoolClassService schoolClassService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER')")
+    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER') or hasAuthority('PARENT') or hasAuthority('STUDENT')")
     public List<SchoolClass> getAllClasses() {
         return schoolClassService.getAllClasses();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER')")
+    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER') or hasAuthority('PARENT') or hasAuthority('STUDENT')")
     public ResponseEntity<SchoolClass> getClassById(@PathVariable Long id) {
         return schoolClassService.getClassById(id)
                 .map(ResponseEntity::ok)

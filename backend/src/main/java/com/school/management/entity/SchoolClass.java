@@ -23,8 +23,8 @@ public class SchoolClass {
     @JsonIgnoreProperties({"classes", "subjects", "hibernateLazyInitializer", "handler"})
     private Teacher teacher; // Homeroom teacher
 
-    @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
-    @JsonIgnoreProperties({"schoolClass", "hibernateLazyInitializer", "handler"})
+    @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonIgnoreProperties({"schoolClass", "parent", "hibernateLazyInitializer", "handler"})
     private List<Student> students;
 
     public SchoolClass() {}

@@ -1,8 +1,15 @@
-# Node
+# Node & JS package managers
 node_modules/
 dist/
 .env*
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+.bun/
+.bunx/
+.cache/
+.turbo/
 
 # Java
 target/
@@ -24,8 +31,11 @@ target/
 *.aab
 .flutter-plugins
 .flutter-plugins-dependencies
+.dart_tool/
+.packages
 
 # OS
 .DS_Store
 Thumbs.db
+
 

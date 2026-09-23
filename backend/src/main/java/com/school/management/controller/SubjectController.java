@@ -19,13 +19,13 @@ public class SubjectController {
     private SubjectService subjectService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER')")
+    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER') or hasAuthority('PARENT') or hasAuthority('STUDENT')")
     public List<Subject> getAllSubjects() {
         return subjectService.getAllSubjects();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER')")
+    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER') or hasAuthority('PARENT') or hasAuthority('STUDENT')")
     public ResponseEntity<Subject> getSubjectById(@PathVariable Long id) {
         return subjectService.getSubjectById(id)
                 .map(ResponseEntity::ok)
