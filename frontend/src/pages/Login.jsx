@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { School, Eye, EyeOff, Loader2 } from 'lucide-react';
 import './Login.css';
 
+import { API_BASE_URL } from '../api/axios';
+
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -31,7 +33,9 @@ const Login = () => {
       if (err.response && err.response.status === 401) {
         setError('اسم المستخدم أو كلمة المرور غير صحيحة');
       } else {
-        setError('تعذر الاتصال بالخادم. تأكد من أن قاعدة البيانات مهيأة.');
+        const status = err.response?.status ? `(${err.response.status}) ` : '';
+        const msg = err.response?.data?.message || err.message || '';
+        setError(`تعذر الاتصال بالخادم ${status}${msg} | الرابط: ${API_BASE_URL}`);
       }
     } finally {
       setLoading(false);
