@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'أدخل عنوان خادم الـ Backend (مثال: https://erp-school-production.up.railway.app/api):',
+              'أدخل عنوان خادم الـ Backend (مثال: https://school-erp-backend-zkuh.onrender.com/api):',
               style: TextStyle(fontSize: 13),
             ),
             const SizedBox(height: 12),
