@@ -39,9 +39,27 @@ public class SubjectService {
 
     @Transactional
     public void deleteSubject(Long id) {
+        // Clean up teacher_subjects join table
+        try {
+            subjectRepository.deleteTeacherSubjectsBySubjectId(id);
+        } catch (Exception ignored) {}
+
         // Clean up grades for this subject
-        List<Grade> grades = gradeRepository.findBySubjectId(id);
-        gradeRepository.deleteAll(grades);
+        try {
+            List<Grade> grades = gradeRepository.findBySubjectId(id);
+            gradeRepository.deleteAll(grades);
+        } catch (Exception ignored) {}
+
+        // Clean up or disassociate homework for this subject
+        try {
+            List<Homework> homeworks = homeworkRepository.findAll();
+            for (Homework h : homeworks) {
+                if (h.getSubject() != null && h.getSubject().getId().equals(id)) {
+                    h.setSubject(null);
+                    homeworkRepository.save(h);
+                }
+            }
+        } catch (Exception ignored) {}
 
         // Delete subject
         subjectRepository.deleteById(id);

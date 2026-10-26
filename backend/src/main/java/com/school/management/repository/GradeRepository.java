@@ -10,4 +10,8 @@ import java.util.List;
 public interface GradeRepository extends JpaRepository<Grade, Long> {
     List<Grade> findByStudentId(Long studentId);
     List<Grade> findBySubjectId(Long subjectId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM Grade g WHERE g.student.id = :studentId")
+    void deleteByStudentId(@org.springframework.data.repository.query.Param("studentId") Long studentId);
 }

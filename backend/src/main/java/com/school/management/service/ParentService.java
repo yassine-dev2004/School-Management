@@ -249,6 +249,9 @@ public class ParentService {
         }
 
         parentRepository.deleteById(id);
-        userRepository.deleteById(id);
+        try {
+            userRepository.deleteUserRolesByUserId(id);
+            userRepository.deleteUserById(id);
+        } catch (Exception ignored) {}
     }
 }

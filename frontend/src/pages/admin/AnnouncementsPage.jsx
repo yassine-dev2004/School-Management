@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Pencil, Trash2, X, Bell, Download, Users, Tag, Calendar } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, Bell, Download, Users, Tag, Calendar, RefreshCw } from 'lucide-react';
 import api from '../../api/axios';
 import { useToast } from '../../context/ToastContext';
 import './CrudPage.css';
@@ -180,6 +180,14 @@ const AnnouncementsPage = () => {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            className="btn btn-ghost" 
+            onClick={() => { loadItems(); loadClasses(); }} 
+            disabled={loading}
+            title="تحديث البيانات"
+          >
+            <RefreshCw size={18} className={loading ? 'spinning' : ''} /> تحديث
+          </button>
           <button className="btn btn-ghost" onClick={exportCSV}>
             <Download size={18} /> تصدير Excel/CSV
           </button>

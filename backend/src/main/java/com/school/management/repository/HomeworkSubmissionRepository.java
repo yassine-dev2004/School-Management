@@ -10,4 +10,8 @@ import java.util.List;
 public interface HomeworkSubmissionRepository extends JpaRepository<HomeworkSubmission, Long> {
     List<HomeworkSubmission> findByStudentId(Long studentId);
     List<HomeworkSubmission> findByHomeworkId(Long homeworkId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM HomeworkSubmission h WHERE h.student.id = :studentId")
+    void deleteByStudentId(@org.springframework.data.repository.query.Param("studentId") Long studentId);
 }

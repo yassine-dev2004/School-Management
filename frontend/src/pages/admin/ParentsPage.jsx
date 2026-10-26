@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Pencil, Trash2, X, Baby, Download, Phone, Mail, UserCheck } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, Baby, Download, Phone, Mail, UserCheck, RefreshCw } from 'lucide-react';
 import api from '../../api/axios';
 import { useToast } from '../../context/ToastContext';
 import './CrudPage.css';
@@ -173,6 +173,14 @@ const ParentsPage = () => {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            className="btn btn-ghost" 
+            onClick={loadItems} 
+            disabled={loading}
+            title="تحديث البيانات"
+          >
+            <RefreshCw size={18} className={loading ? 'spinning' : ''} /> تحديث
+          </button>
           <button className="btn btn-ghost" onClick={exportCSV}>
             <Download size={18} /> تصدير Excel/CSV
           </button>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Users, ClipboardList, UserCheck, BookOpen, Calendar, ChevronDown } from 'lucide-react';
+import { Users, ClipboardList, UserCheck, BookOpen, Calendar, ChevronDown, RefreshCw } from 'lucide-react';
 import api from '../../api/axios';
 import '../admin/CrudPage.css';
 
@@ -46,8 +46,21 @@ const ChildrenPage = () => {
 
   return (
     <div className="crud-page animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title">أبنائي</h1>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1 className="page-title">أبنائي</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
+            متابعة التحصيل الدراسي والحضور والواجبات للأبناء
+          </p>
+        </div>
+        <button 
+          className="btn btn-ghost" 
+          onClick={loadData} 
+          disabled={loading}
+          title="تحديث البيانات"
+        >
+          <RefreshCw size={18} className={loading ? 'spinning' : ''} /> تحديث
+        </button>
       </div>
 
       {loading ? <div className="spinner"></div> : (

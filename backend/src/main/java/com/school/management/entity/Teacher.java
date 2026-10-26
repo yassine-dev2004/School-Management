@@ -29,7 +29,7 @@ public class Teacher {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Set<Subject> subjects = new HashSet<>();
 
-    @OneToMany(mappedBy = "teacher", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "teacher")
     @JsonIgnoreProperties({"teacher", "students", "hibernateLazyInitializer", "handler"})
     private List<SchoolClass> classes;
 

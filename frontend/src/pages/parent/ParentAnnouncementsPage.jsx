@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Megaphone } from 'lucide-react';
+import { Megaphone, RefreshCw } from 'lucide-react';
 import api from '../../api/axios';
 import '../admin/CrudPage.css';
 
@@ -24,8 +24,21 @@ const ParentAnnouncementsPage = () => {
 
   return (
     <div className="crud-page animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title">الإعلانات</h1>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1 className="page-title">الإعلانات</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
+            التعاميم والأخبار والتنبيهات الموجهة لأولياء الأمور
+          </p>
+        </div>
+        <button 
+          className="btn btn-ghost" 
+          onClick={loadItems} 
+          disabled={loading}
+          title="تحديث البيانات"
+        >
+          <RefreshCw size={18} className={loading ? 'spinning' : ''} /> تحديث
+        </button>
       </div>
 
       {loading ? <div className="spinner"></div> : (

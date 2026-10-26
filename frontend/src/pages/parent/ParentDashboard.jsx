@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Users, ClipboardList, UserCheck, Calendar, TrendingUp, BookOpen, AlertCircle } from 'lucide-react';
+import { Users, ClipboardList, UserCheck, Calendar, TrendingUp, BookOpen, AlertCircle, RefreshCw } from 'lucide-react';
 import api from '../../api/axios';
 import '../Dashboard.css';
 
@@ -51,11 +51,25 @@ const ParentDashboard = () => {
 
   return (
     <div className="admin-dashboard animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title">مرحباً {user?.username || 'ولي الأمر'} 👋</h1>
-        <div className="header-date">
-          <Calendar size={16} />
-          <span>{new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1 className="page-title">مرحباً {user?.username || 'ولي الأمر'} 👋</h1>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button 
+            className="btn btn-ghost" 
+            onClick={loadDashboard} 
+            disabled={loading}
+            title="تحديث البيانات"
+            style={{ padding: '8px 14px' }}
+          >
+            <RefreshCw size={16} className={loading ? 'spinning' : ''} />
+            <span>تحديث</span>
+          </button>
+          <div className="header-date">
+            <Calendar size={16} />
+            <span>{new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+          </div>
         </div>
       </div>
 

@@ -169,14 +169,26 @@ public class StudentService {
 
     @Transactional
     public void deleteStudent(Long id) {
-        // Safe delete: Clean up dependent records first to prevent foreign key errors
+        // Safe, clean and immediate cascading deletion
         try {
-            attendanceRepository.deleteAll(attendanceRepository.findByStudentId(id));
-            gradeRepository.deleteAll(gradeRepository.findByStudentId(id));
-            homeworkSubmissionRepository.deleteAll(homeworkSubmissionRepository.findByStudentId(id));
+            attendanceRepository.deleteByStudentId(id);
         } catch (Exception ignored) {}
 
-        studentRepository.deleteById(id);
-        userRepository.deleteById(id);
+        try {
+            gradeRepository.deleteByStudentId(id);
+        } catch (Exception ignored) {}
+
+        try {
+            homeworkSubmissionRepository.deleteByStudentId(id);
+        } catch (Exception ignored) {}
+
+        // Delete student record
+        studentRepository.deleteStudentById(id);
+
+        // Delete associated user and roles
+        try {
+            userRepository.deleteUserRolesByUserId(id);
+            userRepository.deleteUserById(id);
+        } catch (Exception ignored) {}
     }
 }

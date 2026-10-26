@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, GraduationCap, School, BookOpen, TrendingUp, Calendar, UserCheck, AlertCircle, FileText, PlusCircle, ArrowLeft } from 'lucide-react';
+import { Users, GraduationCap, School, BookOpen, TrendingUp, Calendar, UserCheck, AlertCircle, FileText, PlusCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import api from '../api/axios';
 import './Dashboard.css';
 
@@ -94,9 +94,21 @@ const AdminDashboard = () => {
           <h1 className="page-title">لوحة التحكم الرئيسية</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '4px 0 0 0' }}>مرحباً بك في نظام إدارة المدرسة - المتابعة المباشرة والبيانات الحقيقية</p>
         </div>
-        <div className="header-date glass-panel" style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)' }}>
-          <Calendar size={16} />
-          <span>{new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button 
+            className="btn btn-ghost" 
+            onClick={loadAllDashboardData} 
+            disabled={loading}
+            title="تحديث البيانات"
+            style={{ padding: '8px 14px' }}
+          >
+            <RefreshCw size={16} className={loading ? 'spinning' : ''} />
+            <span>تحديث</span>
+          </button>
+          <div className="header-date glass-panel" style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)' }}>
+            <Calendar size={16} />
+            <span>{new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+          </div>
         </div>
       </div>
 
@@ -164,9 +176,9 @@ const AdminDashboard = () => {
                     <div className="announcement-content">
                       <h4>{a.title}</h4>
                       <p>{a.content}</p>
-                      {a.createdDate && (
+                      {(a.datePosted || a.createdDate) && (
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          {new Date(a.createdDate).toLocaleDateString('ar-EG-u-nu-latn')}
+                          {new Date(a.datePosted || a.createdDate).toLocaleDateString('ar-EG-u-nu-latn')}
                         </span>
                       )}
                     </div>

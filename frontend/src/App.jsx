@@ -1,9 +1,12 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import ToastContainer from './components/ToastContainer';
 import ConfirmModal from './components/ConfirmModal';
+import ServerStatusNotice from './components/ServerStatusNotice';
 import DashboardLayout from './components/Layout/DashboardLayout';
+import { startKeepAlive } from './api/axios';
 import Login from './pages/Login';
 import AdminDashboard from './pages/Dashboard';
 import StudentsPage from './pages/admin/StudentsPage';
@@ -62,6 +65,10 @@ const AppRoutes = () => {
 };
 
 function App() {
+  useEffect(() => {
+    startKeepAlive();
+  }, []);
+
   return (
     <BrowserRouter>
       <AuthProvider>
@@ -70,6 +77,7 @@ function App() {
             <AppRoutes />
             <ToastContainer />
             <ConfirmModal />
+            <ServerStatusNotice />
           </ErrorBoundary>
         </ToastProvider>
       </AuthProvider>

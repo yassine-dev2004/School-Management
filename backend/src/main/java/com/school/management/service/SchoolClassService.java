@@ -31,6 +31,9 @@ public class SchoolClassService {
     @Autowired
     private HomeworkRepository homeworkRepository;
 
+    @Autowired
+    private AnnouncementRepository announcementRepository;
+
     public List<SchoolClass> getAllClasses() {
         return schoolClassRepository.findAll();
     }
@@ -81,12 +84,31 @@ public class SchoolClassService {
 
     @Transactional
     public void deleteClass(Long id) {
-        // Safe delete: Disassociate students and homework
+        // Safe delete: Disassociate students
         List<Student> students = studentRepository.findBySchoolClassId(id);
         for (Student s : students) {
             s.setSchoolClass(null);
             studentRepository.save(s);
         }
+
+        // Disassociate homework
+        try {
+            List<Homework> homeworks = homeworkRepository.findBySchoolClassId(id);
+            for (Homework h : homeworks) {
+                h.setSchoolClass(null);
+                homeworkRepository.save(h);
+            }
+        } catch (Exception ignored) {}
+
+        // Disassociate announcements
+        try {
+            List<Announcement> announcements = announcementRepository.findByTargetClassId(id);
+            for (Announcement a : announcements) {
+                a.setTargetClass(null);
+                announcementRepository.save(a);
+            }
+        } catch (Exception ignored) {}
+
         schoolClassRepository.deleteById(id);
     }
 }

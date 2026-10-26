@@ -10,4 +10,8 @@ import java.util.List;
 public interface StudentRepository extends JpaRepository<Student, Long> {
     List<Student> findBySchoolClassId(Long classId);
     List<Student> findByParentId(Long parentId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM Student s WHERE s.id = :id")
+    void deleteStudentById(@org.springframework.data.repository.query.Param("id") Long id);
 }

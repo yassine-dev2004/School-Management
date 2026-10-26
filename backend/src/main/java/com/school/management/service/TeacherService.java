@@ -32,6 +32,9 @@ public class TeacherService {
     private SchoolClassRepository schoolClassRepository;
 
     @Autowired
+    private HomeworkRepository homeworkRepository;
+
+    @Autowired
     private PasswordEncoder encoder;
 
     public List<Teacher> getAllTeachers() {
@@ -156,7 +159,19 @@ public class TeacherService {
             teacherRepository.save(teacher);
         }
 
+        // Disassociate homework from teacher
+        try {
+            List<Homework> homeworks = homeworkRepository.findByTeacherId(id);
+            for (Homework h : homeworks) {
+                h.setTeacher(null);
+                homeworkRepository.save(h);
+            }
+        } catch (Exception ignored) {}
+
         teacherRepository.deleteById(id);
-        userRepository.deleteById(id);
+        try {
+            userRepository.deleteUserRolesByUserId(id);
+            userRepository.deleteUserById(id);
+        } catch (Exception ignored) {}
     }
 }

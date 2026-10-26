@@ -32,10 +32,12 @@ const Login = () => {
     } catch (err) {
       if (err.response && err.response.status === 401) {
         setError('اسم المستخدم أو كلمة المرور غير صحيحة');
+      } else if (err.code === 'ECONNABORTED' || !err.response || [502, 503, 504].includes(err.response?.status)) {
+        setError('الخادم السحابي يستيقظ من وضع السكون. يرجى الانتظار بضع ثوانٍ ثم إعادة المحاولة...');
       } else {
         const status = err.response?.status ? `(${err.response.status}) ` : '';
         const msg = err.response?.data?.message || err.message || '';
-        setError(`تعذر الاتصال بالخادم ${status}${msg} | الرابط: ${API_BASE_URL}`);
+        setError(`تعذر الاتصال بالخادم ${status}${msg}`);
       }
     } finally {
       setLoading(false);
