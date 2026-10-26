@@ -1,9 +1,12 @@
 package com.school.management.service;
 
+import com.school.management.entity.Announcement;
+import com.school.management.entity.Homework;
 import com.school.management.entity.SchoolClass;
 import com.school.management.entity.Student;
 import com.school.management.entity.Teacher;
 import com.school.management.payload.request.ClassRequest;
+import com.school.management.repository.AnnouncementRepository;
 import com.school.management.repository.HomeworkRepository;
 import com.school.management.repository.SchoolClassRepository;
 import com.school.management.repository.StudentRepository;

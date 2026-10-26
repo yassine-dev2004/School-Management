@@ -5,5 +5,5 @@ services:
     dockerfilePath: ./Dockerfile
     plan: free
     region: frankfurt
-    healthCheckPath: /
+    healthCheckPath: /api/health
     autoDeploy: true
