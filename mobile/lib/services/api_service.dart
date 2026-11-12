@@ -18,7 +18,7 @@ class ApiResult<T> {
 
 class ApiService {
   static const String defaultBaseUrl =
-      'https://thread-mil-preferred-proper.trycloudflare.com/api';
+      'https://rio-openings-cognitive-four.trycloudflare.com/api';
 
   static String _normalizeUrl(String url) {
     var clean = url.trim().replaceAll(RegExp(r'/+$'), '');
