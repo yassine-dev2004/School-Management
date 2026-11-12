@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'أدخل عنوان خادم الـ Backend (مثال: https://school-erp-backend-zkuh.onrender.com/api):',
+              'أدخل عنوان خادم الـ Backend (مثال: https://thread-mil-preferred-proper.trycloudflare.com/api):',
               style: TextStyle(fontSize: 13),
             ),
             const SizedBox(height: 12),
@@ -129,24 +129,43 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         actions: [
           TextButton(
+            onPressed: () async {
+              await ApiService.resetBaseUrl();
+              if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('تم استعادة عنوان الخادم الافتراضي'),
+                  backgroundColor: Colors.indigo,
+                ),
+              );
+            },
+            child: const Text('الافتراضي'),
+          ),
+          TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('إلغاء'),
           ),
           ElevatedButton(
             onPressed: () async {
               if (urlController.text.trim().isNotEmpty) {
+                final ok = await ApiService.checkHealth(urlController.text.trim());
                 await ApiService.setBaseUrl(urlController.text.trim());
+                if (dialogCtx.mounted) Navigator.pop(dialogCtx);
                 if (!mounted) return;
-                Navigator.pop(dialogCtx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('تم حفظ عنوان الخادم بنجاح'),
-                    backgroundColor: Colors.green,
+                  SnackBar(
+                    content: Text(
+                      ok
+                          ? 'تم الحفظ والاتصال بالخادم بنجاح ✅'
+                          : 'تم حفظ الرابط، لكن الخادم لا يستجيب حالياً ⚠️',
+                    ),
+                    backgroundColor: ok ? Colors.green : Colors.orange,
                   ),
                 );
               }
             },
-            child: const Text('حفظ'),
+            child: const Text('حفظ وفحص'),
           ),
         ],
       ),

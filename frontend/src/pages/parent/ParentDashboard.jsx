@@ -51,11 +51,11 @@ const ParentDashboard = () => {
 
   return (
     <div className="admin-dashboard animate-fade-in">
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="page-header">
         <div>
           <h1 className="page-title">مرحباً {user?.username || 'ولي الأمر'} 👋</h1>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="page-header-actions">
           <button 
             className="btn btn-ghost" 
             onClick={loadDashboard} 

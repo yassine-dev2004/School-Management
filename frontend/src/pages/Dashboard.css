@@ -209,3 +209,34 @@
   color: var(--text-main);
 }
 
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard {
+    gap: var(--spacing-md);
+  }
+
+  .stat-card {
+    padding: var(--spacing-md);
+    gap: var(--spacing-md);
+  }
+
+  .stat-number {
+    font-size: 1.45rem;
+  }
+
+  .dash-section {
+    padding: var(--spacing-md);
+  }
+
+  .header-date {
+    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem !important;
+  }
+}
+

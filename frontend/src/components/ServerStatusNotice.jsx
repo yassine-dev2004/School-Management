@@ -19,8 +19,10 @@ const ServerStatusNotice = () => {
     <div
       style={{
         position: 'fixed',
-        bottom: '24px',
-        right: '24px',
+        bottom: '76px',
+        left: '16px',
+        right: '16px',
+        margin: '0 auto',
         zIndex: 9999,
         background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.95), rgba(15, 23, 42, 0.95))',
         border: '1px solid rgba(99, 102, 241, 0.35)',
@@ -34,7 +36,7 @@ const ServerStatusNotice = () => {
         gap: '12px',
         color: '#ffffff',
         animation: 'fadeInUp 0.3s ease-out',
-        maxWidth: '420px',
+        maxWidth: '400px',
       }}
     >
       <div
@@ -54,10 +56,10 @@ const ServerStatusNotice = () => {
       </div>
       <div style={{ flex: 1, fontSize: '0.85rem', lineHeight: 1.4 }}>
         <div style={{ fontWeight: 600, color: '#e0e7ff', marginBottom: '2px' }}>
-          جاري إيقاظ الخادم السحابي...
+          جاري الاتصال بالخادم...
         </div>
         <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.78rem' }}>
-          خادم Render في مرحلة التشغيل (قد يستغرق بضع ثوانٍ لأول طلب).
+          يتم الآن تحميل البيانات، قد يستغرق ذلك بضع ثوانٍ.
         </div>
       </div>
     </div>

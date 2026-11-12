@@ -9,8 +9,12 @@ class AnnouncementsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إعلانات المدرسة'),
+        title: const Text(
+          'إعلانات المدرسة',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.indigo,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: announcements.isEmpty
           ? const Center(

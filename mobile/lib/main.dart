@@ -22,10 +22,16 @@ class SchoolManagementApp extends StatelessWidget {
       title: 'نظام إدارة المدرسة ERP',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.indigo,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
+      builder: (context, child) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       home: FutureBuilder<bool>(
         future: _checkLoggedIn(),
         builder: (context, snapshot) {

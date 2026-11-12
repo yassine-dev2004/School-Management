@@ -89,12 +89,12 @@ const AdminDashboard = () => {
 
   return (
     <div className="admin-dashboard animate-fade-in">
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="page-header">
         <div>
           <h1 className="page-title">لوحة التحكم الرئيسية</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '4px 0 0 0' }}>مرحباً بك في نظام إدارة المدرسة - المتابعة المباشرة والبيانات الحقيقية</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="page-header-actions">
           <button 
             className="btn btn-ghost" 
             onClick={loadAllDashboardData} 
