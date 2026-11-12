@@ -6,6 +6,12 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:${PGUSER:neondb_owner}}
     password: ${SPRING_DATASOURCE_PASSWORD:${PGPASSWORD:npg_rEl0TjnhDw7M}}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 12
+      minimum-idle: 4
+      idle-timeout: 300000
+      keepalive-time: 120000
+      connection-timeout: 15000
   jpa:
     hibernate:
       ddl-auto: update
@@ -15,12 +21,22 @@ spring:
       hibernate:
         format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_batch_fetch_size: 32
+        order_inserts: true
+        order_updates: true
+        query:
+          plan_cache_max_size: 2048
         jdbc:
+          batch_size: 32
           lob:
             non_contextual_creation: true
 
 server:
   port: ${PORT:8085}
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,text/css,application/javascript
+    min-response-size: 1024
 
 springdoc:
   swagger-ui:
@@ -31,4 +47,3 @@ springdoc:
 jwt:
   secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
   expiration: 86400000 # 24 hours
-

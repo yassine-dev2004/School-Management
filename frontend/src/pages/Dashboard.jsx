@@ -19,14 +19,32 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadAllDashboardData();
+    loadAllDashboardData(false);
   }, []);
 
-  const loadAllDashboardData = async () => {
+  const loadAllDashboardData = async (forceRefresh = true) => {
     setLoading(true);
     const todayStr = new Date().toISOString().split('T')[0];
 
     try {
+      try {
+        const summaryRes = await api.get('/dashboard/summary', { forceRefresh });
+        const d = summaryRes.data || {};
+        setStats({
+          students: d.students ?? 0,
+          teachers: d.teachers ?? 0,
+          classes: d.classes ?? 0,
+          subjects: d.subjects ?? 0,
+          attendanceRate: d.attendanceRate ?? 0,
+          homeworkCount: d.homeworkCount ?? 0,
+          parentsCount: d.parentsCount ?? 0,
+        });
+        setAnnouncements(Array.isArray(d.announcements) ? d.announcements.slice(0, 5) : []);
+        return;
+      } catch {
+        // Fallback if backend has not been updated yet
+      }
+
       const [
         studentsRes, 
         teachersRes, 
@@ -37,14 +55,14 @@ const AdminDashboard = () => {
         homeworkRes,
         parentsRes
       ] = await Promise.all([
-        api.get('/students').catch(() => ({ data: [] })),
-        api.get('/teachers').catch(() => ({ data: [] })),
-        api.get('/classes').catch(() => ({ data: [] })),
-        api.get('/subjects').catch(() => ({ data: [] })),
-        api.get('/announcements').catch(() => ({ data: [] })),
-        api.get(`/attendance/date/${todayStr}`).catch(() => ({ data: [] })),
-        api.get('/homework').catch(() => ({ data: [] })),
-        api.get('/parents').catch(() => ({ data: [] })),
+        api.get('/students', { forceRefresh }).catch(() => ({ data: [] })),
+        api.get('/teachers', { forceRefresh }).catch(() => ({ data: [] })),
+        api.get('/classes', { forceRefresh }).catch(() => ({ data: [] })),
+        api.get('/subjects', { forceRefresh }).catch(() => ({ data: [] })),
+        api.get('/announcements', { forceRefresh }).catch(() => ({ data: [] })),
+        api.get(`/attendance/date/${todayStr}`, { forceRefresh }).catch(() => ({ data: [] })),
+        api.get('/homework', { forceRefresh }).catch(() => ({ data: [] })),
+        api.get('/parents', { forceRefresh }).catch(() => ({ data: [] })),
       ]);
 
       const studentsList = Array.isArray(studentsRes.data) ? studentsRes.data : [];

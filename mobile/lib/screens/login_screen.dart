@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../theme/erp_theme.dart';
+import '../widgets/erp_widgets.dart';
 import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -27,36 +29,20 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('الرجاء إدخال اسم المستخدم وكلمة المرور'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      showErpToast(context, 'الرجاء إدخال اسم المستخدم وكلمة المرور',
+          isWarning: true);
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() => _isLoading = true);
     final result = await ApiService.login(username, password);
-
     if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-    });
+    setState(() => _isLoading = false);
 
     if (result['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم تسجيل الدخول بنجاح'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      showErpToast(context, 'تم تسجيل الدخول بنجاح');
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     } else {
       _showErrorDialog(result['message'] ?? 'فشل تسجيل الدخول');
@@ -66,25 +52,26 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.red),
+            Icon(Icons.error_outline, color: ErpColors.danger),
             SizedBox(width: 8),
-            Text('خطأ في تسجيل الدخول'),
+            Text('خطأ في تسجيل الدخول',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
           ],
         ),
         content: Text(message),
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(ctx);
               _showServerConfigDialog();
             },
             child: const Text('إعدادات الخادم'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('حسناً'),
           ),
         ],
@@ -95,7 +82,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _showServerConfigDialog() async {
     final currentUrl = await ApiService.getBaseUrl();
     final urlController = TextEditingController(text: currentUrl);
-
     if (!mounted) return;
 
     showDialog(
@@ -103,9 +89,10 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (dialogCtx) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.settings, color: Colors.indigo),
+            Icon(Icons.dns_outlined, color: ErpColors.primary),
             SizedBox(width: 8),
-            Text('عنوان خادم النظام'),
+            Text('عنوان خادم النظام',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
           ],
         ),
         content: Column(
@@ -113,16 +100,16 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'أدخل عنوان خادم الـ Backend (مثال: https://thread-mil-preferred-proper.trycloudflare.com/api):',
-              style: TextStyle(fontSize: 13),
+              'أدخل رابط الـ API الخاص بالخادم:',
+              style: TextStyle(fontSize: 13, color: ErpColors.textSecondary),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             TextField(
               controller: urlController,
-              decoration: InputDecoration(
+              textDirection: TextDirection.ltr,
+              decoration: const InputDecoration(
                 labelText: 'رابط الخادم (API URL)',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                prefixIcon: const Icon(Icons.link),
+                prefixIcon: Icon(Icons.link),
               ),
             ),
           ],
@@ -133,35 +120,28 @@ class _LoginScreenState extends State<LoginScreen> {
               await ApiService.resetBaseUrl();
               if (dialogCtx.mounted) Navigator.pop(dialogCtx);
               if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('تم استعادة عنوان الخادم الافتراضي'),
-                  backgroundColor: Colors.indigo,
-                ),
-              );
+              showErpToast(context, 'تم استعادة عنوان الخادم الافتراضي');
             },
             child: const Text('الافتراضي'),
           ),
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('إلغاء'),
           ),
           ElevatedButton(
             onPressed: () async {
               if (urlController.text.trim().isNotEmpty) {
-                final ok = await ApiService.checkHealth(urlController.text.trim());
+                final ok =
+                    await ApiService.checkHealth(urlController.text.trim());
                 await ApiService.setBaseUrl(urlController.text.trim());
                 if (dialogCtx.mounted) Navigator.pop(dialogCtx);
                 if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      ok
-                          ? 'تم الحفظ والاتصال بالخادم بنجاح ✅'
-                          : 'تم حفظ الرابط، لكن الخادم لا يستجيب حالياً ⚠️',
-                    ),
-                    backgroundColor: ok ? Colors.green : Colors.orange,
-                  ),
+                showErpToast(
+                  context,
+                  ok
+                      ? 'تم الحفظ والاتصال بالخادم بنجاح ✅'
+                      : 'تم حفظ الرابط، لكن الخادم لا يستجيب حالياً ⚠️',
+                  isWarning: !ok,
                 );
               }
             },
@@ -175,101 +155,132 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: ErpColors.bgBase,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.indigo),
-            tooltip: 'إعدادات عنوان الخادم',
+            icon: const Icon(Icons.dns_outlined, color: ErpColors.textSecondary),
+            tooltip: 'إعدادات الخادم',
             onPressed: _showServerConfigDialog,
           ),
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Center(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Icon(Icons.school, size: 70, color: Colors.indigo),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'نظام إدارة المدرسة ERP',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.indigo,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'تطبيق ولي الأمر والطلاب',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                  ),
-                  const SizedBox(height: 32),
-                  TextField(
-                    controller: _usernameController,
-                    decoration: InputDecoration(
-                      labelText: 'اسم المستخدم',
-                      hintText: 'مثال: parent أو admin',
-                      prefixIcon: const Icon(Icons.person),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'كلمة المرور',
-                      hintText: 'أدخل كلمة المرور',
-                      prefixIcon: const Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.indigo,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: ErpCard(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF111111), Color(0xFF374151)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.14),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
                             ),
-                          ),
-                          onPressed: _login,
-                          child: const Text(
-                            'تسجيل الدخول',
-                            style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
+                          ],
                         ),
-                  const SizedBox(height: 20),
-                  TextButton.icon(
-                    onPressed: _showServerConfigDialog,
-                    icon: const Icon(Icons.wifi, size: 16, color: Colors.grey),
-                    label: const Text(
-                      'تعديل عنوان الخادم (IP Server)',
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                        child: const Icon(Icons.school,
+                            color: Colors.white, size: 34),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    const Text(
+                      'نظام إدارة المدرسة',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: ErpColors.textMain,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'مرحباً بك، قم بتسجيل الدخول للمتابعة',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        color: ErpColors.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: _usernameController,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'اسم المستخدم',
+                        hintText: 'أدخل اسم المستخدم',
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      onSubmitted: (_) => _login(),
+                      decoration: InputDecoration(
+                        labelText: 'كلمة المرور',
+                        hintText: 'أدخل كلمة المرور',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined),
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _login,
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'تسجيل الدخول',
+                                style: TextStyle(
+                                    fontSize: 15.5, fontWeight: FontWeight.w800),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextButton.icon(
+                      onPressed: _showServerConfigDialog,
+                      icon: const Icon(Icons.wifi,
+                          size: 16, color: ErpColors.textMuted),
+                      label: const Text(
+                        'إعدادات عنوان الخادم (Server API)',
+                        style: TextStyle(
+                            color: ErpColors.textMuted, fontSize: 12.5),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

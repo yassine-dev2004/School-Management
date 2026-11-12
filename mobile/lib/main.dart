@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/login_screen.dart';
+import 'theme/erp_theme.dart';
 
 void main() {
   runApp(const SchoolManagementApp());
 }
 
 class SchoolManagementApp extends StatelessWidget {
-  const SchoolManagementApp({Key? key}) : super(key: key);
+  const SchoolManagementApp({super.key});
 
   Future<bool> _checkLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
@@ -19,13 +20,9 @@ class SchoolManagementApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'نظام إدارة المدرسة ERP',
+      title: 'مدرستي ERP — نظام إدارة المدرسة',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-        useMaterial3: true,
-        fontFamily: 'Roboto',
-      ),
+      theme: ErpTheme.build(),
       builder: (context, child) {
         return Directionality(
           textDirection: TextDirection.rtl,

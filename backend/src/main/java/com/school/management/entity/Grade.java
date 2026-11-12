@@ -5,7 +5,10 @@ import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "grades")
+@Table(name = "grades", indexes = {
+        @Index(name = "idx_grade_student", columnList = "student_id"),
+        @Index(name = "idx_grade_subject", columnList = "subject_id")
+})
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Grade {
     

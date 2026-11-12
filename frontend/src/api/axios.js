@@ -4,14 +4,25 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://thread-mil-preferr
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 45000, // 45s timeout to handle cloud spin-up without hanging indefinitely
+  timeout: 45000,
   headers: {
     'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0',
   },
 });
+
+// Fast in-memory GET micro-cache (15s TTL) + in-flight request deduplication
+const GET_CACHE_TTL_MS = 15000;
+const getCache = new Map();
+const inFlightGets = new Map();
+
+export const clearApiCache = () => {
+  getCache.clear();
+};
+
+const getCacheKey = (url, params) => {
+  if (!params || Object.keys(params).length === 0) return url;
+  return `${url}?${new URLSearchParams(params).toString()}`;
+};
 
 // Cold-start & slow request tracking
 let activeRequestsCount = 0;
@@ -34,7 +45,7 @@ const onRequestStart = () => {
       if (activeRequestsCount > 0) {
         notifyWakeStatus(true);
       }
-    }, 5000);
+    }, 4000);
   }
 };
 
@@ -46,7 +57,7 @@ const onRequestEnd = () => {
   }
 };
 
-// Request interceptor — attach JWT token and cache buster for GET requests
+// Request interceptor — attach JWT token & invalidate cache on mutations
 api.interceptors.request.use(
   (config) => {
     onRequestStart();
@@ -60,9 +71,9 @@ api.interceptors.request.use(
       }
     } catch {}
 
-    // Append timestamp to GET requests to force fresh DB fetch without browser caching
-    if (config.method && config.method.toLowerCase() === 'get') {
-      config.params = { ...config.params, _t: Date.now() };
+    const method = (config.method || 'get').toLowerCase();
+    if (method !== 'get') {
+      clearApiCache();
     }
     return config;
   },
@@ -72,7 +83,7 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor with smart retry on Render sleep / cold start
+// Response interceptor with smart retry on transient wake/network errors
 api.interceptors.response.use(
   (response) => {
     onRequestEnd();
@@ -80,8 +91,6 @@ api.interceptors.response.use(
   },
   async (error) => {
     const config = error.config;
-
-    // Retry logic for cold start & transient errors (502, 503, 504, timeout, network error)
     const isNetworkOrServerWake =
       !error.response ||
       error.code === 'ECONNABORTED' ||
@@ -90,15 +99,14 @@ api.interceptors.response.use(
     if (config && isNetworkOrServerWake && (!config._retryCount || config._retryCount < 2)) {
       config._retryCount = (config._retryCount || 0) + 1;
       notifyWakeStatus(true);
-      // Wait 2.5s before retry to give Render container time to complete startup
-      await new Promise((resolve) => setTimeout(resolve, 2500));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       return api(config);
     }
 
     onRequestEnd();
 
-    // Response interceptor — handle 401 (only redirect if not already on login page)
     if (error.response && error.response.status === 401) {
+      clearApiCache();
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
         localStorage.removeItem('user');
         window.location.href = '/login';
@@ -108,15 +116,46 @@ api.interceptors.response.use(
   }
 );
 
-// Keep-alive heartbeat: ping backend health endpoint every 12 minutes to keep Render awake during active sessions
+// Wrap api.get with micro-caching and duplicate in-flight request deduplication
+const rawGet = api.get.bind(api);
+api.get = (url, config = {}) => {
+  const { forceRefresh = false, ...axiosConfig } = config;
+  const key = getCacheKey(url, axiosConfig.params);
+
+  if (!forceRefresh) {
+    const cached = getCache.get(key);
+    if (cached && Date.now() - cached.ts < GET_CACHE_TTL_MS) {
+      return Promise.resolve(cached.response);
+    }
+    const existing = inFlightGets.get(key);
+    if (existing) {
+      return existing;
+    }
+  }
+
+  const reqPromise = rawGet(url, axiosConfig)
+    .then((res) => {
+      getCache.set(key, { ts: Date.now(), response: res });
+      inFlightGets.delete(key);
+      return res;
+    })
+    .catch((err) => {
+      inFlightGets.delete(key);
+      throw err;
+    });
+
+  inFlightGets.set(key, reqPromise);
+  return reqPromise;
+};
+
+// Keep-alive heartbeat every 4 minutes so tunnel + DB connection pool stay warm
 let heartbeatInterval = null;
 export const startKeepAlive = () => {
   if (heartbeatInterval) return;
-  heartbeatInterval = setInterval(async () => {
-    try {
-      await axios.get(`${API_BASE_URL.replace(/\/api$/, '')}/api/health`, { timeout: 15000 });
-    } catch {}
-  }, 12 * 60 * 1000);
+  const ping = () =>
+    axios.get(`${API_BASE_URL.replace(/\/api$/, '')}/api/health`, { timeout: 10000 }).catch(() => {});
+  ping();
+  heartbeatInterval = setInterval(ping, 4 * 60 * 1000);
 };
 
 export { API_BASE_URL };

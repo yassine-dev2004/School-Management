@@ -6,7 +6,10 @@ import java.util.Date;
 import java.util.List;
 
 @Entity
-@Table(name = "homework")
+@Table(name = "homework", indexes = {
+        @Index(name = "idx_homework_class", columnList = "class_id"),
+        @Index(name = "idx_homework_subject", columnList = "subject_id")
+})
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Homework {
     
