@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import Sidebar from '../Sidebar/Sidebar';
 import {
   Menu, Bell, School, LayoutDashboard, Users,
-  UserCheck, ClipboardList, Baby, Megaphone
+  UserCheck, ClipboardList, Baby, Megaphone, LogOut
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import './DashboardLayout.css';
@@ -11,7 +11,14 @@ import './DashboardLayout.css';
 const DashboardLayout = () => {
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, isAdmin, isTeacher } = useAuth();
+  const { user, logout, isAdmin, isTeacher } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    setMobileOpen(false);
+    logout();
+    navigate('/login');
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -95,7 +102,11 @@ const DashboardLayout = () => {
               <Bell size={20} />
               <span className="notification-dot"></span>
             </button>
-            <div className="top-bar-user">
+            <div
+              className="top-bar-user"
+              onClick={() => isStaff && navigate('/admin/settings')}
+              title={isStaff ? 'الإعدادات' : ''}
+            >
               <div className="top-bar-avatar">
                 {user?.username?.charAt(0)?.toUpperCase() || 'م'}
               </div>
@@ -106,6 +117,16 @@ const DashboardLayout = () => {
                 </span>
               </div>
             </div>
+            <button
+              type="button"
+              className="top-bar-logout-btn"
+              onClick={handleLogout}
+              title="تسجيل الخروج"
+              aria-label="تسجيل الخروج"
+            >
+              <LogOut size={17} />
+              <span className="top-bar-logout-text">خروج</span>
+            </button>
           </div>
         </header>
 
