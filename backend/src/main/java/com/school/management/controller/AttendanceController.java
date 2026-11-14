@@ -130,9 +130,12 @@ public class AttendanceController {
 
     @PostMapping("/bulk")
     @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER')")
-    public List<Attendance> createBulkAttendance(@Valid @RequestBody List<Attendance> attendances) {
+    public List<Attendance> createBulkAttendance(@RequestBody List<Attendance> attendances) {
         Long teacherId = isTeacherOnly() ? getCurrentUserId() : null;
         for (Attendance a : attendances) {
+            if (a.getDate() == null) {
+                a.setDate(new Date());
+            }
             if (a.getStudent() != null && a.getStudent().getId() != null) {
                 studentRepository.findById(a.getStudent().getId()).ifPresent(a::setStudent);
                 if (teacherId != null && !isStudentInTeacherClasses(a.getStudent().getId(), teacherId)) {
