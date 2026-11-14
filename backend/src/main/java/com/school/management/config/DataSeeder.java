@@ -61,24 +61,25 @@ public class DataSeeder implements CommandLineRunner {
                 System.out.println(">>> DataSeeder: Initial Admin account 'admin' / 'admin123' created successfully.");
             }
 
-            // 3. Seed Default Teacher if missing
-            if (!userRepository.existsByUsername("teacher")) {
-                User teacherUser = new User();
-                teacherUser.setUsername("teacher");
-                teacherUser.setEmail("teacher@school.com");
-                teacherUser.setPassword(passwordEncoder.encode("teacher123"));
-                teacherUser.setFirstName("أحمد");
-                teacherUser.setLastName("المنصوري");
-                teacherUser.setPhone("20111222");
+            // 3. Seed Default Teacher if missing or unlinked
+            User teacherUser = userRepository.findByUsername("teacher").orElseGet(() -> {
+                User u = new User();
+                u.setUsername("teacher");
+                u.setEmail("teacher@school.com");
+                u.setPassword(passwordEncoder.encode("teacher123"));
+                u.setFirstName("أحمد");
+                u.setLastName("المنصوري");
+                u.setPhone("20111222");
 
                 Set<Role> roles = new HashSet<>();
                 roleRepository.findByName(RoleName.TEACHER).ifPresent(roles::add);
-                teacherUser.setRoles(roles);
+                u.setRoles(roles);
+                return userRepository.save(u);
+            });
 
-                User savedUser = userRepository.save(teacherUser);
-
+            if (!teacherRepository.existsById(teacherUser.getId())) {
                 Teacher teacher = new Teacher();
-                teacher.setUser(savedUser);
+                teacher.setUser(teacherUser);
                 teacher.setQualification("أستاذ تعليم ابتدائي أول");
                 teacher.setJoiningDate("2024-09-15");
 
@@ -99,8 +100,13 @@ public class DataSeeder implements CommandLineRunner {
                         break;
                     }
                 }
+                if (!classes.isEmpty() && classes.stream().noneMatch(c -> c.getTeacher() != null && c.getTeacher().getId().equals(savedTeacher.getId()))) {
+                    SchoolClass sc = classes.get(0);
+                    sc.setTeacher(savedTeacher);
+                    schoolClassRepository.save(sc);
+                }
 
-                System.out.println(">>> DataSeeder: Initial Teacher account 'teacher' / 'teacher123' created successfully.");
+                System.out.println(">>> DataSeeder: Linked Teacher profile for 'teacher' / 'teacher123' successfully.");
             }
         } catch (Exception e) {
             System.err.println(">>> DataSeeder warning: " + e.getMessage());
