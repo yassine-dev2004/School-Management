@@ -21,7 +21,14 @@ public class SchoolClass {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "teacher_id")
     @JsonIgnoreProperties({"classes", "subjects", "hibernateLazyInitializer", "handler"})
-    private Teacher teacher; // Homeroom teacher
+    private Teacher teacher; // Homeroom / Lead teacher
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "class_teachers",
+            joinColumns = @JoinColumn(name = "class_id"),
+            inverseJoinColumns = @JoinColumn(name = "teacher_id"))
+    @JsonIgnoreProperties({"classes", "subjects", "hibernateLazyInitializer", "handler"})
+    private java.util.Set<Teacher> teachers = new java.util.HashSet<>();
 
     @OneToMany(mappedBy = "schoolClass", fetch = FetchType.EAGER)
     @JsonIgnoreProperties({"schoolClass", "parent", "hibernateLazyInitializer", "handler"})
@@ -67,6 +74,14 @@ public class SchoolClass {
 
     public void setTeacher(Teacher teacher) {
         this.teacher = teacher;
+    }
+
+    public java.util.Set<Teacher> getTeachers() {
+        return teachers;
+    }
+
+    public void setTeachers(java.util.Set<Teacher> teachers) {
+        this.teachers = teachers != null ? teachers : new java.util.HashSet<>();
     }
 
     public List<Student> getStudents() {

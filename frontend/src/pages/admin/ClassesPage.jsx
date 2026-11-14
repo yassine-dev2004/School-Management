@@ -13,7 +13,7 @@ const ClassesPage = () => {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', section: '', teacherId: '' });
+  const [form, setForm] = useState({ name: '', section: '', teacherId: '', teacherIds: [] });
 
   useEffect(() => {
     loadItems();
@@ -64,10 +64,14 @@ const ClassesPage = () => {
   const handleOpenModal = (cls = null) => {
     if (cls) {
       setEditing(cls);
+      const initialIds = Array.isArray(cls.teachers) && cls.teachers.length > 0
+        ? cls.teachers.map((t) => Number(t.id))
+        : (cls.teacher?.id ? [Number(cls.teacher.id)] : []);
       setForm({
         name: cls.name || '',
         section: cls.section || '',
-        teacherId: cls.teacher?.id ? String(cls.teacher.id) : '',
+        teacherId: cls.teacher?.id ? String(cls.teacher.id) : (initialIds[0] ? String(initialIds[0]) : ''),
+        teacherIds: initialIds,
       });
     } else {
       setEditing(null);
@@ -75,9 +79,33 @@ const ClassesPage = () => {
         name: '',
         section: '',
         teacherId: '',
+        teacherIds: [],
       });
     }
     setShowModal(true);
+  };
+
+  const toggleTeacher = (tId) => {
+    setForm((prev) => {
+      const numId = Number(tId);
+      const exists = prev.teacherIds.includes(numId);
+      const nextTeacherIds = exists
+        ? prev.teacherIds.filter((id) => id !== numId)
+        : [...prev.teacherIds, numId];
+
+      let nextLead = prev.teacherId;
+      if (exists && String(prev.teacherId) === String(numId)) {
+        nextLead = nextTeacherIds.length > 0 ? String(nextTeacherIds[0]) : '';
+      } else if (!exists && !nextLead) {
+        nextLead = String(numId);
+      }
+
+      return {
+        ...prev,
+        teacherIds: nextTeacherIds,
+        teacherId: nextLead,
+      };
+    });
   };
 
   const handleSave = async (e) => {
@@ -93,6 +121,7 @@ const ClassesPage = () => {
         name: form.name.trim(),
         section: form.section.trim(),
         teacherId: form.teacherId ? Number(form.teacherId) : null,
+        teacherIds: form.teacherIds.map(Number),
       };
 
       if (editing) {
@@ -207,7 +236,13 @@ const ClassesPage = () => {
               </thead>
               <tbody>
                 {filtered.map((item, idx) => {
-                  const teacherName = item.teacher?.user ? `${item.teacher.user.firstName} ${item.teacher.user.lastName}` : null;
+                  const leadTeacher = item.teacher;
+                  const allTeachers = Array.isArray(item.teachers) && item.teachers.length > 0
+                    ? item.teachers
+                    : (leadTeacher ? [leadTeacher] : []);
+                  const leadTeacherName = leadTeacher?.user ? `${leadTeacher.user.firstName} ${leadTeacher.user.lastName}` : null;
+                  const otherTeachers = allTeachers.filter((t) => t.id !== leadTeacher?.id);
+
                   return (
                     <tr key={item.id}>
                       <td>{idx + 1}</td>
@@ -218,14 +253,26 @@ const ClassesPage = () => {
                         <span className="badge badge-primary">{item.section || 'عام'}</span>
                       </td>
                       <td>
-                        {teacherName ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <GraduationCap size={16} color="var(--primary)" />
-                            <span>{teacherName}</span>
-                          </div>
-                        ) : (
-                          <span style={{ color: 'var(--text-muted)' }}>غير معين</span>
-                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {leadTeacherName ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <GraduationCap size={16} color="var(--primary)" />
+                              <span style={{ fontWeight: 600 }}>{leadTeacherName}</span>
+                              <span className="badge badge-primary" style={{ fontSize: '0.7rem', padding: '1px 6px' }}>رائد الفصل</span>
+                            </div>
+                          ) : (
+                            <span style={{ color: 'var(--text-muted)' }}>غير معين</span>
+                          )}
+                          {otherTeachers.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '2px' }}>
+                              {otherTeachers.map((ot) => (
+                                <span key={ot.id} className="badge badge-secondary" style={{ fontSize: '0.72rem' }}>
+                                  {ot.user?.firstName} {ot.user?.lastName}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td>
                         <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -260,7 +307,7 @@ const ClassesPage = () => {
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '540px' }}>
             <div className="modal-header">
               <h2>{editing ? 'تعديل فصل دراسي' : 'إضافة فصل دراسي جديد'}</h2>
               <button className="btn-icon" onClick={() => setShowModal(false)}>
@@ -290,19 +337,95 @@ const ClassesPage = () => {
               </div>
 
               <div className="form-group">
-                <label>المعلم المسؤول (رائد الفصل)</label>
+                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>المعلمون المسندون للفصل (اختيار متعدد)</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600 }}>
+                    {form.teacherIds.length} معلم محدد
+                  </span>
+                </label>
+                <div style={{
+                  maxHeight: '160px',
+                  overflowY: 'auto',
+                  border: '1px solid var(--border)',
+                  borderRadius: '10px',
+                  padding: '8px',
+                  background: 'var(--bg-base)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                }}>
+                  {teachers.map((t) => {
+                    const isSelected = form.teacherIds.includes(Number(t.id));
+                    const isLead = String(form.teacherId) === String(t.id);
+                    const subNames = Array.isArray(t.subjects) ? t.subjects.map((s) => s.name).join(', ') : '';
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => toggleTeacher(t.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '6px 10px',
+                          borderRadius: '8px',
+                          background: isSelected ? 'rgba(16, 185, 129, 0.12)' : 'var(--surface)',
+                          border: isSelected ? '1px solid var(--success)' : '1px solid var(--border)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {}}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          <span style={{ fontWeight: isSelected ? 700 : 500, fontSize: '0.9rem' }}>
+                            {t.user?.firstName} {t.user?.lastName}
+                          </span>
+                          {subNames && (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              ({subNames})
+                            </span>
+                          )}
+                        </div>
+                        {isSelected && isLead && (
+                          <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>
+                            رائد الفصل
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {teachers.length === 0 && (
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', margin: '8px 0' }}>
+                      لا يوجد معلمون مسجلون في النظام
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>رائد الفصل (المعلم المسؤول الرئيسي)</label>
                 <select
                   className="input-field"
                   value={form.teacherId}
                   onChange={(e) => setForm({ ...form, teacherId: e.target.value })}
                 >
-                  <option value="">-- بدون معلم مسؤول حالياً --</option>
-                  {teachers.map((t) => (
+                  <option value="">-- بدون معلم مسؤول رئيسي --</option>
+                  {(form.teacherIds.length > 0
+                    ? teachers.filter((t) => form.teacherIds.includes(Number(t.id)))
+                    : teachers
+                  ).map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.user?.firstName} {t.user?.lastName} {t.qualification ? `(${t.qualification})` : ''}
                     </option>
                   ))}
                 </select>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                  يتم اختيار رائد الفصل من بين المعلمين المسندين للفصل أعلاه
+                </span>
               </div>
 
               <div className="modal-actions" style={{ marginTop: '16px' }}>

@@ -85,7 +85,16 @@ class _ClassesScreenState extends State<ClassesScreen> {
         TextEditingController(text: cls?['name']?.toString() ?? '');
     final sectionCtrl =
         TextEditingController(text: cls?['section']?.toString() ?? '');
-    String teacherId = cls?['teacher']?['id']?.toString() ?? '';
+    final initialTeacherIds = (cls?['teachers'] as List<dynamic>?)
+            ?.map((t) => t['id']?.toString() ?? '')
+            .where((id) => id.isNotEmpty)
+            .toSet() ??
+        (cls?['teacher']?['id'] != null
+            ? {cls!['teacher']['id'].toString()}
+            : <String>{});
+    final selectedTeacherIds = Set<String>.from(initialTeacherIds);
+    String teacherId = cls?['teacher']?['id']?.toString() ??
+        (selectedTeacherIds.isNotEmpty ? selectedTeacherIds.first : '');
     bool saving = false;
 
     await showModalBottomSheet(
@@ -138,14 +147,67 @@ class _ClassesScreenState extends State<ClassesScreen> {
                   decoration:
                       const InputDecoration(labelText: 'الشعبة (مثال: أ)'),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
+                const Text(
+                  'المعلمون المسندون للفصل (اختيار متعدد):',
+                  style: TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: _teachers.map((t) {
+                    final tu = t['user'] ?? {};
+                    final id = t['id'].toString();
+                    final name =
+                        '${tu['firstName'] ?? ''} ${tu['lastName'] ?? ''}'
+                            .trim();
+                    final isSel = selectedTeacherIds.contains(id);
+                    return FilterChip(
+                      selected: isSel,
+                      label: Text(name),
+                      selectedColor: ErpColors.primary,
+                      checkmarkColor: Colors.white,
+                      labelStyle: TextStyle(
+                        color: isSel ? Colors.white : ErpColors.textMain,
+                        fontWeight:
+                            isSel ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 12,
+                      ),
+                      onSelected: (val) {
+                        setModalState(() {
+                          if (val) {
+                            selectedTeacherIds.add(id);
+                            if (teacherId.isEmpty) teacherId = id;
+                          } else {
+                            selectedTeacherIds.remove(id);
+                            if (teacherId == id) {
+                              teacherId = selectedTeacherIds.isNotEmpty
+                                  ? selectedTeacherIds.first
+                                  : '';
+                            }
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: teacherId,
-                  decoration:
-                      const InputDecoration(labelText: 'المعلم المسؤول'),
+                  value: selectedTeacherIds.contains(teacherId)
+                      ? teacherId
+                      : (selectedTeacherIds.isNotEmpty
+                          ? selectedTeacherIds.first
+                          : ''),
+                  decoration: const InputDecoration(
+                      labelText: 'رائد الفصل (المعلم الرئيسي المسؤول)'),
                   items: [
                     const DropdownMenuItem(value: '', child: Text('غير معين')),
-                    ..._teachers.map((t) {
+                    ..._teachers
+                        .where((t) =>
+                            selectedTeacherIds.contains(t['id'].toString()))
+                        .map((t) {
                       final tu = t['user'] ?? {};
                       return DropdownMenuItem(
                         value: t['id'].toString(),
@@ -174,6 +236,9 @@ class _ClassesScreenState extends State<ClassesScreen> {
                             'teacherId': teacherId.isNotEmpty
                                 ? int.parse(teacherId)
                                 : null,
+                            'teacherIds': selectedTeacherIds
+                                .map((id) => int.parse(id))
+                                .toList(),
                           };
                           final res = cls != null
                               ? await ApiService.put(
@@ -253,6 +318,14 @@ class _ClassesScreenState extends State<ClassesScreen> {
                       final studentsCount =
                           (c['students'] as List<dynamic>?)?.length ?? 0;
 
+                      final allTeachers =
+                          (c['teachers'] as List<dynamic>?) ?? [];
+                      final otherTeachersCount = allTeachers
+                          .where((t) =>
+                              t['id']?.toString() !=
+                              c['teacher']?['id']?.toString())
+                          .length;
+
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: ErpCard(
@@ -285,7 +358,7 @@ class _ClassesScreenState extends State<ClassesScreen> {
                                               fontWeight: FontWeight.w800),
                                         ),
                                         Text(
-                                          'المعلم المسؤول: $teacherName',
+                                          'رائد الفصل: $teacherName${otherTeachersCount > 0 ? " (+$otherTeachersCount معلمين)" : ""}',
                                           style: const TextStyle(
                                               fontSize: 12.5,
                                               color: ErpColors.textMuted),

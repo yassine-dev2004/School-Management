@@ -60,10 +60,21 @@ public class SchoolClassService {
         SchoolClass sc = new SchoolClass();
         sc.setName(request.getName());
         sc.setSection(request.getSection());
-        if (request.getTeacherId() != null) {
-            Teacher teacher = teacherRepository.findById(request.getTeacherId()).orElse(null);
-            sc.setTeacher(teacher);
+
+        java.util.Set<Teacher> assignedTeachers = new java.util.HashSet<>();
+        if (request.getTeacherIds() != null && !request.getTeacherIds().isEmpty()) {
+            assignedTeachers.addAll(teacherRepository.findAllById(request.getTeacherIds()));
         }
+        if (request.getTeacherId() != null) {
+            Teacher leadTeacher = teacherRepository.findById(request.getTeacherId()).orElse(null);
+            sc.setTeacher(leadTeacher);
+            if (leadTeacher != null) {
+                assignedTeachers.add(leadTeacher);
+            }
+        } else if (!assignedTeachers.isEmpty()) {
+            sc.setTeacher(assignedTeachers.iterator().next());
+        }
+        sc.setTeachers(assignedTeachers);
         return schoolClassRepository.save(sc);
     }
 
@@ -73,12 +84,23 @@ public class SchoolClassService {
                 .orElseThrow(() -> new RuntimeException("Class not found with ID: " + id));
         sc.setName(request.getName());
         sc.setSection(request.getSection());
+
+        java.util.Set<Teacher> assignedTeachers = new java.util.HashSet<>();
+        if (request.getTeacherIds() != null && !request.getTeacherIds().isEmpty()) {
+            assignedTeachers.addAll(teacherRepository.findAllById(request.getTeacherIds()));
+        }
         if (request.getTeacherId() != null) {
-            Teacher teacher = teacherRepository.findById(request.getTeacherId()).orElse(null);
-            sc.setTeacher(teacher);
+            Teacher leadTeacher = teacherRepository.findById(request.getTeacherId()).orElse(null);
+            sc.setTeacher(leadTeacher);
+            if (leadTeacher != null) {
+                assignedTeachers.add(leadTeacher);
+            }
+        } else if (!assignedTeachers.isEmpty()) {
+            sc.setTeacher(assignedTeachers.iterator().next());
         } else {
             sc.setTeacher(null);
         }
+        sc.setTeachers(assignedTeachers);
         return schoolClassRepository.save(sc);
     }
 
