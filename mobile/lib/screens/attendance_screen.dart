@@ -19,10 +19,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   List<dynamic> _classes = [];
   String _search = '';
   String _classFilterId = '';
-  String _role = 'TEACHER';
   bool _loading = true;
-
-  bool get _isAdmin => ApiService.isAdminRole(_role);
 
   @override
   void initState() {
@@ -38,8 +35,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   Future<void> _loadAll() async {
     setState(() => _loading = true);
-    final session = await ApiService.getUserSession();
-    _role = session['role'] ?? 'TEACHER';
     final results = await Future.wait([
       ApiService.getList('/attendance'),
       ApiService.getList('/students'),
@@ -109,6 +104,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ? formatDateShort(att['date'])
           : DateTime.now().toIso8601String().split('T').first,
     );
+    final remarksCtrl = TextEditingController(
+      text: att?['remarks']?.toString() ?? '',
+    );
     bool saving = false;
 
     await showModalBottomSheet(
@@ -169,9 +167,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     : 'حاضر',
                 decoration: const InputDecoration(labelText: 'الحالة'),
                 items: const [
-                  DropdownMenuItem(value: 'حاضر', child: Text('حاضر')),
-                  DropdownMenuItem(value: 'غائب', child: Text('غائب')),
-                  DropdownMenuItem(value: 'متأخر', child: Text('متأخر')),
+                  DropdownMenuItem(value: 'حاضر', child: Text('حاضر (Présent)')),
+                  DropdownMenuItem(value: 'غائب', child: Text('غائب (Absent)')),
+                  DropdownMenuItem(value: 'متأخر', child: Text('متأخر (En retard)')),
                 ],
                 onChanged: (v) => setModalState(() => status = v ?? 'حاضر'),
               ),
@@ -180,6 +178,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 controller: dateCtrl,
                 decoration:
                     const InputDecoration(labelText: 'التاريخ (YYYY-MM-DD)'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: remarksCtrl,
+                decoration:
+                    const InputDecoration(labelText: 'سبب الغياب / التأخير أو ملاحظات'),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -195,7 +199,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         final payload = {
                           'student': {'id': int.parse(studentId)},
                           'status': status,
-                          'date': '${dateCtrl.text.trim()}T08:00:00.000Z',
+                          'date': dateCtrl.text.trim(),
+                          'remarks': remarksCtrl.text.trim(),
                         };
                         final res = att != null
                             ? await ApiService.put(
@@ -406,8 +411,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             .map((r) => {
                                   'student': {'id': r['studentId']},
                                   'status': r['status'],
-                                  'date':
-                                      '${dateCtrl.text.trim()}T08:00:00.000Z',
+                                  'date': dateCtrl.text.trim(),
                                 })
                             .toList();
                         final res = await ApiService.post(
@@ -527,6 +531,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                           fontSize: 12,
                                           color: ErpColors.textMuted),
                                     ),
+                                    if ((a['remarks'] ?? '')
+                                        .toString()
+                                        .trim()
+                                        .isNotEmpty) ...[
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        'ملاحظة: ${a['remarks']}',
+                                        style: const TextStyle(
+                                          fontSize: 11.5,
+                                          color: ErpColors.textSecondary,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -537,12 +555,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                     const Icon(Icons.edit_outlined, size: 19),
                                 onPressed: () => _openSingleModal(a),
                               ),
-                              if (_isAdmin)
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline,
-                                      size: 19, color: ErpColors.danger),
-                                  onPressed: () => _deleteAttendance(a),
-                                ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline,
+                                    size: 19, color: ErpColors.danger),
+                                onPressed: () => _deleteAttendance(a),
+                              ),
                             ],
                           ),
                         ),

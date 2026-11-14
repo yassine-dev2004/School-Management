@@ -17,6 +17,7 @@ const ParentsPage = lazy(() => import('./pages/admin/ParentsPage'));
 const ClassesPage = lazy(() => import('./pages/admin/ClassesPage'));
 const SubjectsPage = lazy(() => import('./pages/admin/SubjectsPage'));
 const AttendancePage = lazy(() => import('./pages/admin/AttendancePage'));
+const TeacherAttendancePage = lazy(() => import('./pages/admin/TeacherAttendancePage'));
 const GradesPage = lazy(() => import('./pages/admin/GradesPage'));
 const HomeworkPage = lazy(() => import('./pages/admin/HomeworkPage'));
 const AnnouncementsPage = lazy(() => import('./pages/admin/AnnouncementsPage'));
@@ -54,6 +55,7 @@ const AppRoutes = () => {
           <Route path="classes" element={<ClassesPage />} />
           <Route path="subjects" element={<SubjectsPage />} />
           <Route path="attendance" element={<AttendancePage />} />
+          <Route path="teacher-attendance" element={<TeacherAttendancePage />} />
           <Route path="grades" element={<GradesPage />} />
           <Route path="homework" element={<HomeworkPage />} />
           <Route path="announcements" element={<AnnouncementsPage />} />

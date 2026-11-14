@@ -1,5 +1,6 @@
 package com.school.management.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.Date;
@@ -22,10 +23,13 @@ public class Attendance {
     private Student student;
 
     @Temporal(TemporalType.DATE)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "Africa/Tunis")
     private Date date;
 
     @Column(nullable = false)
-    private String status; // Present, Absent, Late
+    private String status; // Present / حاضر, Absent / غائب, Late / متأخر
+
+    private String remarks; // ملاحظات أو سبب الغياب أو التأخير
 
     public Attendance() {}
 
@@ -34,6 +38,14 @@ public class Attendance {
         this.student = student;
         this.date = date;
         this.status = status;
+    }
+
+    public Attendance(Long id, Student student, Date date, String status, String remarks) {
+        this.id = id;
+        this.student = student;
+        this.date = date;
+        this.status = status;
+        this.remarks = remarks;
     }
 
     public Long getId() {
@@ -66,5 +78,13 @@ public class Attendance {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getRemarks() {
+        return remarks;
+    }
+
+    public void setRemarks(String remarks) {
+        this.remarks = remarks;
     }
 }

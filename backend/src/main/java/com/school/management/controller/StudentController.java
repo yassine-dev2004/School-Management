@@ -18,9 +18,28 @@ public class StudentController {
     @Autowired
     private StudentService studentService;
 
+    @Autowired
+    private com.school.management.repository.SchoolClassRepository schoolClassRepository;
+
     @GetMapping
     @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER')")
     public List<Student> getAllStudents() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof com.school.management.security.UserDetailsImpl) {
+            com.school.management.security.UserDetailsImpl userDetails = (com.school.management.security.UserDetailsImpl) auth.getPrincipal();
+            boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ADMINISTRATOR"));
+            boolean isTeacher = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("TEACHER"));
+            if (isTeacher && !isAdmin) {
+                java.util.List<com.school.management.entity.SchoolClass> classes = schoolClassRepository.findByTeacherId(userDetails.getId());
+                java.util.List<Student> students = new java.util.ArrayList<>();
+                for (com.school.management.entity.SchoolClass sc : classes) {
+                    if (sc.getStudents() != null) {
+                        students.addAll(sc.getStudents());
+                    }
+                }
+                return students;
+            }
+        }
         return studentService.getAllStudents();
     }
 

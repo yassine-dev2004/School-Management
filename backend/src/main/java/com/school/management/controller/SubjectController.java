@@ -18,9 +18,23 @@ public class SubjectController {
     @Autowired
     private SubjectService subjectService;
 
+    @Autowired
+    private com.school.management.repository.TeacherRepository teacherRepository;
+
     @GetMapping
     @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER') or hasAuthority('PARENT') or hasAuthority('STUDENT')")
     public List<Subject> getAllSubjects() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof com.school.management.security.UserDetailsImpl) {
+            com.school.management.security.UserDetailsImpl userDetails = (com.school.management.security.UserDetailsImpl) auth.getPrincipal();
+            boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ADMINISTRATOR"));
+            boolean isTeacher = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("TEACHER"));
+            if (isTeacher && !isAdmin) {
+                return teacherRepository.findById(userDetails.getId())
+                        .<List<Subject>>map(t -> new java.util.ArrayList<>(t.getSubjects()))
+                        .orElse(java.util.Collections.emptyList());
+            }
+        }
         return subjectService.getAllSubjects();
     }
 

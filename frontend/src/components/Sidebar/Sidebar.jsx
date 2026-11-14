@@ -29,6 +29,7 @@ const Sidebar = ({ collapsed, mobileOpen, onCloseMobile }) => {
       items: [
         { to: '/admin/students', icon: Users, label: 'إدارة الطلاب' },
         { to: '/admin/teachers', icon: GraduationCap, label: 'إدارة المعلمين' },
+        { to: '/admin/teacher-attendance', icon: UserCheck, label: 'حضور المعلمين' },
         { to: '/admin/parents', icon: Baby, label: 'أولياء الأمور' },
         { to: '/admin/classes', icon: School, label: 'الفصول الدراسية' },
         { to: '/admin/subjects', icon: BookOpen, label: 'المواد الدراسية' },
@@ -51,6 +52,33 @@ const Sidebar = ({ collapsed, mobileOpen, onCloseMobile }) => {
     },
   ];
 
+  const teacherSections = [
+    {
+      title: 'بوابة المعلم',
+      items: [
+        { to: '/admin/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
+        { to: '/admin/teacher-attendance', icon: UserCheck, label: 'تسجيل حضوري' },
+      ],
+    },
+    {
+      title: 'فصولي وطلابي',
+      items: [
+        { to: '/admin/students', icon: Users, label: 'طلابي' },
+        { to: '/admin/classes', icon: School, label: 'فصولي المسندة' },
+        { to: '/admin/subjects', icon: BookOpen, label: 'المواد المسندة' },
+      ],
+    },
+    {
+      title: 'التقييم والمتابعة',
+      items: [
+        { to: '/admin/attendance', icon: UserCheck, label: 'الحضور والغياب' },
+        { to: '/admin/grades', icon: ClipboardList, label: 'رصد الدرجات' },
+        { to: '/admin/homework', icon: FileText, label: 'الواجبات' },
+        { to: '/admin/announcements', icon: Megaphone, label: 'الإعلانات' },
+      ],
+    },
+  ];
+
   const parentSections = [
     {
       title: 'بوابة ولي الأمر',
@@ -62,7 +90,12 @@ const Sidebar = ({ collapsed, mobileOpen, onCloseMobile }) => {
     },
   ];
 
-  const sections = (isAdmin() || isTeacher()) ? adminSections : parentSections;
+  let sections = parentSections;
+  if (isAdmin()) {
+    sections = adminSections;
+  } else if (isTeacher()) {
+    sections = teacherSections;
+  }
 
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>

@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Pencil, Trash2, X, CalendarCheck, CheckCircle2, XCircle, Clock, Download, Users, Check, Sparkles, RefreshCw } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, CalendarCheck, CheckCircle2, XCircle, Clock, Download, Users, Check, Sparkles, RefreshCw, ShieldCheck } from 'lucide-react';
 import api from '../../api/axios';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
+import { formatDateSafe, getTodayIsoDate } from '../../utils/dateUtils';
 import './CrudPage.css';
 
 const AttendancePage = () => {
   const { showToast, confirm } = useToast();
+  const { isTeacher, isAdmin } = useAuth();
   const [items, setItems] = useState([]);
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -21,13 +24,14 @@ const AttendancePage = () => {
   const [form, setForm] = useState({
     studentId: '',
     status: 'حاضر',
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayIsoDate(),
+    remarks: '',
   });
 
   // Bulk attendance modal
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkClassId, setBulkClassId] = useState('');
-  const [bulkDate, setBulkDate] = useState(new Date().toISOString().split('T')[0]);
+  const [bulkDate, setBulkDate] = useState(getTodayIsoDate());
   const [bulkList, setBulkList] = useState([]);
   const [savingBulk, setSavingBulk] = useState(false);
 
@@ -82,17 +86,20 @@ const AttendancePage = () => {
   const handleOpenModal = (att = null) => {
     if (att) {
       setEditing(att);
+      const d = att.date ? (typeof att.date === 'string' && att.date.length >= 10 ? att.date.substring(0, 10) : new Date(att.date).toISOString().split('T')[0]) : getTodayIsoDate();
       setForm({
         studentId: att.student?.id ? String(att.student.id) : '',
         status: att.status || 'حاضر',
-        date: att.date ? new Date(att.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        date: d,
+        remarks: att.remarks || '',
       });
     } else {
       setEditing(null);
       setForm({
         studentId: students[0]?.id ? String(students[0].id) : '',
         status: 'حاضر',
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayIsoDate(),
+        remarks: '',
       });
     }
     setShowModal(true);
@@ -110,7 +117,8 @@ const AttendancePage = () => {
       const payload = {
         student: { id: Number(form.studentId) },
         status: form.status,
-        date: form.date ? new Date(form.date) : new Date(),
+        date: form.date || getTodayIsoDate(),
+        remarks: form.remarks?.trim() || '',
       };
 
       if (editing) {
@@ -135,7 +143,7 @@ const AttendancePage = () => {
   const handleOpenBulkModal = () => {
     const firstClassId = classes[0]?.id ? String(classes[0].id) : '';
     setBulkClassId(firstClassId);
-    setBulkDate(new Date().toISOString().split('T')[0]);
+    setBulkDate(getTodayIsoDate());
     if (firstClassId) {
       loadBulkStudentsForClass(firstClassId);
     }
@@ -154,6 +162,7 @@ const AttendancePage = () => {
         studentId: s.id,
         studentName: `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.trim() || `طالب #${s.id}`,
         status: 'حاضر',
+        remarks: '',
       }))
     );
   };
@@ -168,6 +177,12 @@ const AttendancePage = () => {
     );
   };
 
+  const setStudentBulkRemarks = (studentId, remarks) => {
+    setBulkList((prev) =>
+      prev.map((item) => (item.studentId === studentId ? { ...item, remarks } : item))
+    );
+  };
+
   const handleSaveBulk = async () => {
     if (bulkList.length === 0) {
       showToast('لا يوجد طلاب في هذا الفصل لتسجيل حضورهم', 'warning');
@@ -179,7 +194,8 @@ const AttendancePage = () => {
       const records = bulkList.map((b) => ({
         student: { id: b.studentId },
         status: b.status,
-        date: new Date(bulkDate),
+        date: bulkDate || getTodayIsoDate(),
+        remarks: b.remarks?.trim() || '',
       }));
 
       await api.post('/attendance/bulk', records);
@@ -266,7 +282,14 @@ const AttendancePage = () => {
     <div className="crud-page animate-fade-in">
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 className="page-title">الحضور والغياب</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h1 className="page-title">الحضور والغياب</h1>
+            {isTeacher && isTeacher() && !isAdmin() && (
+              <span className="badge badge-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem' }}>
+                <ShieldCheck size={14} /> فصولي المسندة فقط
+              </span>
+            )}
+          </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
             رصد الحضور اليومي للطلاب والتأخر والانضباط المدرسي
           </p>
@@ -402,6 +425,7 @@ const AttendancePage = () => {
                   <th>الفصل الدراسي</th>
                   <th>التاريخ</th>
                   <th>الحالة</th>
+                  <th>ملاحظات / تبرير</th>
                   <th>إجراءات</th>
                 </tr>
               </thead>
@@ -410,7 +434,7 @@ const AttendancePage = () => {
                   const studentName = item.student?.user?.firstName
                     ? `${item.student.user.firstName} ${item.student.user.lastName}`
                     : `طالب #${item.student?.id || ''}`;
-                  const dateStr = item.date ? new Date(item.date).toLocaleDateString('ar-EG-u-nu-latn') : '—';
+                  const dateStr = formatDateSafe(item.date);
 
                   return (
                     <tr key={item.id}>
@@ -425,6 +449,11 @@ const AttendancePage = () => {
                       </td>
                       <td>{dateStr}</td>
                       <td>{getStatusBadge(item.status)}</td>
+                      <td>
+                        <span style={{ color: item.remarks ? 'var(--text-main)' : 'var(--text-muted)', fontSize: '0.85rem' }}>
+                          {item.remarks || '—'}
+                        </span>
+                      </td>
                       <td>
                         <div className="table-actions">
                           <button className="btn-icon" title="تعديل" onClick={() => handleOpenModal(item)}>
@@ -504,6 +533,17 @@ const AttendancePage = () => {
                   value={form.date}
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
                   required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>ملاحظات / سبب الغياب أو التأخير</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="مثال: شهادة طبية، تأخر 10 دقائق، عذر مبرر..."
+                  value={form.remarks}
+                  onChange={(e) => setForm({ ...form, remarks: e.target.value })}
                 />
               </div>
 
@@ -590,47 +630,59 @@ const AttendancePage = () => {
                   key={item.studentId}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
+                    flexDirection: 'column',
+                    gap: '6px',
                     padding: '10px 14px',
                     borderRadius: '8px',
                     background: 'rgba(255,255,255,0.04)',
                     border: '1px solid var(--border-color)',
                   }}
                 >
-                  <span style={{ fontWeight: 600 }}>{item.studentName}</span>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    {['حاضر', 'متأخر', 'غائب'].map((st) => {
-                      const active = item.status === st;
-                      const activeBg =
-                        st === 'حاضر'
-                          ? 'var(--success, #10b981)'
-                          : st === 'متأخر'
-                          ? '#f59e0b'
-                          : 'var(--danger, #ef4444)';
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <span style={{ fontWeight: 600 }}>{item.studentName}</span>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {['حاضر', 'متأخر', 'غائب'].map((st) => {
+                        const active = item.status === st;
+                        const activeBg =
+                          st === 'حاضر'
+                            ? 'var(--success, #10b981)'
+                            : st === 'متأخر'
+                            ? '#f59e0b'
+                            : 'var(--danger, #ef4444)';
 
-                      return (
-                        <button
-                          key={st}
-                          type="button"
-                          onClick={() => setStudentBulkStatus(item.studentId, st)}
-                          style={{
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            border: active ? `1px solid ${activeBg}` : '1px solid var(--border-color)',
-                            background: active ? activeBg : 'transparent',
-                            color: active ? '#ffffff' : 'var(--text-muted)',
-                            fontSize: '0.78rem',
-                            fontWeight: active ? 700 : 500,
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                          }}
-                        >
-                          {st}
-                        </button>
-                      );
-                    })}
+                        return (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => setStudentBulkStatus(item.studentId, st)}
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              border: active ? `1px solid ${activeBg}` : '1px solid var(--border-color)',
+                              background: active ? activeBg : 'transparent',
+                              color: active ? '#ffffff' : 'var(--text-muted)',
+                              fontSize: '0.78rem',
+                              fontWeight: active ? 700 : 500,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s',
+                            }}
+                          >
+                            {st}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
+                  {item.status !== 'حاضر' && (
+                    <input
+                      type="text"
+                      className="input-field"
+                      style={{ fontSize: '0.8rem', padding: '4px 8px', marginTop: '2px' }}
+                      placeholder="سبب الغياب أو مدة التأخير (اختياري)..."
+                      value={item.remarks || ''}
+                      onChange={(e) => setStudentBulkRemarks(item.studentId, e.target.value)}
+                    />
+                  )}
                 </div>
               ))}
               {bulkList.length === 0 && (

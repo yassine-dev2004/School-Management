@@ -240,7 +240,7 @@ const TeachersPage = () => {
                 <tr>
                   <th>#</th>
                   <th>اسم المعلم</th>
-                  <th>معرف الدخول</th>
+                  <th>بيانات تسجيل الدخول</th>
                   <th>المؤهل العلمي</th>
                   <th>المواد المسندة</th>
                   <th>الهاتف</th>
@@ -266,9 +266,14 @@ const TeachersPage = () => {
                         </div>
                       </td>
                       <td>
-                        <code style={{ background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.82rem' }}>
-                          {item.user?.username || '—'}
-                        </code>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <code style={{ background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.82rem', width: 'fit-content' }}>
+                            👤 {item.user?.username || '—'}
+                          </code>
+                          <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>
+                            🔑 كلمة السر: {item.user?.username ? 'مفعلة' : '—'}
+                          </span>
+                        </div>
                       </td>
                       <td>{item.qualification || '—'}</td>
                       <td>

@@ -41,6 +41,10 @@ public class SchoolClassService {
         return schoolClassRepository.findAll();
     }
 
+    public List<SchoolClass> getClassesByTeacherId(Long teacherId) {
+        return schoolClassRepository.findByTeacherId(teacherId);
+    }
+
     public Optional<SchoolClass> getClassById(Long id) {
         return schoolClassRepository.findById(id);
     }

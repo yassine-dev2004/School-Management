@@ -23,6 +23,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
 
   bool get _isAdmin => ApiService.isAdminRole(_role);
+  bool get _isTeacher => ApiService.isTeacherRole(_role);
   bool get _isStaff => ApiService.isStaffRole(_role);
 
   @override
@@ -101,6 +102,98 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Future<void> _openTeacherCheckInModal() async {
+    String status = 'PRESENT';
+    final remarksCtrl = TextEditingController();
+    bool saving = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: ErpColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            18,
+            18,
+            18,
+            MediaQuery.of(ctx).viewInsets.bottom + 18,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'تسجيل حضور المعلم (Pointage Enseignant)',
+                      style: TextStyle(
+                          fontSize: 16.5, fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const Divider(),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: status,
+                decoration: const InputDecoration(labelText: 'حالة الحضور *'),
+                items: const [
+                  DropdownMenuItem(
+                      value: 'PRESENT', child: Text('حاضر (Présent)')),
+                  DropdownMenuItem(
+                      value: 'LATE', child: Text('متأخر (En retard)')),
+                  DropdownMenuItem(
+                      value: 'ABSENT', child: Text('غائب (Absent)')),
+                ],
+                onChanged: (v) => setModalState(() => status = v ?? 'PRESENT'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: remarksCtrl,
+                decoration:
+                    const InputDecoration(labelText: 'ملاحظة أو تبرير (اختياري)'),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        setModalState(() => saving = true);
+                        final res = await ApiService.teacherCheckIn(
+                            status, remarksCtrl.text.trim());
+                        if (!ctx.mounted) return;
+                        setModalState(() => saving = false);
+                        if (res.success) {
+                          Navigator.pop(ctx);
+                          if (mounted) {
+                            showErpToast(
+                                context, 'تم تسجيل حضورك بنجاح لهذا اليوم');
+                            _loadData();
+                          }
+                        } else {
+                          if (mounted) {
+                            showErpToast(context, res.message, isError: true);
+                          }
+                        }
+                      },
+                child: Text(saving ? 'جاري التسجيل...' : 'تأكيد الحضور'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   List<Widget> _buildStaffBody() {
     final s = _staffData ?? {};
     final totalStudents = s['totalStudents'] ?? 0;
@@ -110,8 +203,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final totalParents = s['totalParents'] ?? 0;
     final totalHomework = s['totalHomework'] ?? 0;
     final attendanceRate = s['attendanceRate'] ?? 0;
+    final bool checkedInToday = s['checkedInToday'] == true;
+    final String? todayStatus = s['todayStatus']?.toString();
 
     return [
+      if (_isTeacher) ...[
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: checkedInToday
+                ? const Color(0xFF0F291E)
+                : const Color(0xFF261E0A),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: checkedInToday
+                  ? const Color(0xFF10B981)
+                  : const Color(0xFFF59E0B),
+              width: 1.2,
+            ),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: checkedInToday
+                    ? const Color(0xFF10B981).withValues(alpha: 0.2)
+                    : const Color(0xFFF59E0B).withValues(alpha: 0.2),
+                child: Icon(
+                  checkedInToday
+                      ? Icons.check_circle_outline
+                      : Icons.alarm_on_outlined,
+                  color: checkedInToday
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFF59E0B),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      checkedInToday
+                          ? 'تم تسجيل حضورك اليوم بنجاح'
+                          : 'تنبيه تسجيل حضور المعلم (Pointage)',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      checkedInToday
+                          ? 'الحالة: ${todayStatus == "PRESENT" ? "حاضر (Présent)" : todayStatus == "LATE" ? "متأخر (En retard)" : todayStatus ?? "مسجل"}'
+                          : 'يرجى تأكيد حضورك اليوم بضغطة زر واحدة',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: checkedInToday
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFF59E0B),
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  textStyle: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w800),
+                ),
+                onPressed: _openTeacherCheckInModal,
+                child: Text(checkedInToday ? 'تعديل' : 'تسجيل الآن'),
+              ),
+            ],
+          ),
+        ),
+      ],
       GridView.count(
         crossAxisCount: 2,
         shrinkWrap: true,

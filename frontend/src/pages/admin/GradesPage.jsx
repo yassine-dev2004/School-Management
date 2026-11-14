@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Pencil, Trash2, X, ClipboardList, Download, TrendingUp, Award, AlertCircle, Filter, RefreshCw } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, ClipboardList, Download, TrendingUp, Award, AlertCircle, Filter, RefreshCw, ShieldCheck } from 'lucide-react';
 import api from '../../api/axios';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
+import { formatDateSafe, getTodayIsoDate } from '../../utils/dateUtils';
 import './CrudPage.css';
 
 const GradesPage = () => {
   const { showToast, confirm } = useToast();
+  const { isTeacher, isAdmin } = useAuth();
   const [items, setItems] = useState([]);
   const [students, setStudents] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -21,9 +24,11 @@ const GradesPage = () => {
     studentId: '',
     subjectId: '',
     score: '',
-    examType: 'اختبار شهري',
+    maxScore: '20',
+    term: 'الثلاثي الأول',
+    examType: 'فرض مراقبة 1',
     comments: '',
-    recordedDate: new Date().toISOString().split('T')[0],
+    recordedDate: getTodayIsoDate(),
   });
 
   useEffect(() => {
@@ -79,15 +84,16 @@ const GradesPage = () => {
   const handleOpenModal = (grade = null) => {
     if (grade) {
       setEditing(grade);
+      const d = grade.recordedDate ? (typeof grade.recordedDate === 'string' && grade.recordedDate.length >= 10 ? grade.recordedDate.substring(0, 10) : new Date(grade.recordedDate).toISOString().split('T')[0]) : getTodayIsoDate();
       setForm({
         studentId: grade.student?.id ? String(grade.student.id) : '',
         subjectId: grade.subject?.id ? String(grade.subject.id) : '',
         score: grade.score !== null && grade.score !== undefined ? String(grade.score) : '',
-        examType: grade.examType || 'اختبار شهري',
+        maxScore: grade.maxScore !== null && grade.maxScore !== undefined ? String(grade.maxScore) : '20',
+        term: grade.term || 'الثلاثي الأول',
+        examType: grade.examType || 'فرض مراقبة 1',
         comments: grade.comments || '',
-        recordedDate: grade.recordedDate
-          ? new Date(grade.recordedDate).toISOString().split('T')[0]
-          : new Date().toISOString().split('T')[0],
+        recordedDate: d,
       });
     } else {
       setEditing(null);
@@ -95,9 +101,11 @@ const GradesPage = () => {
         studentId: students[0]?.id ? String(students[0].id) : '',
         subjectId: subjects[0]?.id ? String(subjects[0].id) : '',
         score: '',
-        examType: 'اختبار شهري',
+        maxScore: '20',
+        term: 'الثلاثي الأول',
+        examType: 'فرض مراقبة 1',
         comments: '',
-        recordedDate: new Date().toISOString().split('T')[0],
+        recordedDate: getTodayIsoDate(),
       });
     }
     setShowModal(true);
@@ -111,8 +119,9 @@ const GradesPage = () => {
     }
 
     const scoreNum = Number(form.score);
-    if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 100) {
-      showToast('يجب أن تكون الدرجة رقماً بين 0 و 100', 'warning');
+    const maxScoreNum = Number(form.maxScore || 20);
+    if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > maxScoreNum) {
+      showToast(`يجب أن تكون الدرجة رقماً بين 0 و ${maxScoreNum}`, 'warning');
       return;
     }
 
@@ -121,10 +130,12 @@ const GradesPage = () => {
       const payload = {
         student: { id: Number(form.studentId) },
         subject: { id: Number(form.subjectId) },
-        examType: form.examType || 'اختبار شهري',
+        examType: form.examType || 'فرض مراقبة 1',
         score: scoreNum,
+        maxScore: maxScoreNum,
+        term: form.term || 'الثلاثي الأول',
         comments: form.comments.trim(),
-        recordedDate: form.recordedDate || new Date().toISOString().split('T')[0],
+        recordedDate: form.recordedDate || getTodayIsoDate(),
       };
 
       if (editing) {
@@ -205,9 +216,16 @@ const GradesPage = () => {
     <div className="crud-page animate-fade-in">
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 className="page-title">رصد وتقييم الدرجات</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h1 className="page-title">رصد وتقييم الدرجات</h1>
+            {isTeacher && isTeacher() && !isAdmin() && (
+              <span className="badge badge-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem' }}>
+                <ShieldCheck size={14} /> فصولي وموادي فقط
+              </span>
+            )}
+          </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
-            سجل الاختبارات والتقييمات المستمرة والمعدلات العامة
+            سجل الاختبارات والفروض والتقييمات المستمرة للطلاب
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -329,10 +347,11 @@ const GradesPage = () => {
                   <th>اسم الطالب</th>
                   <th>الفصل</th>
                   <th>المادة الدراسية</th>
+                  <th>الثلاثي</th>
                   <th>نوع التقييم</th>
                   <th>الدرجة</th>
                   <th>ملاحظات</th>
-                  <th>تاريخ الرصد</th>
+                  <th>تاريخ التقييم</th>
                   <th>إجراءات</th>
                 </tr>
               </thead>
@@ -343,9 +362,8 @@ const GradesPage = () => {
                     : `طالب #${item.student?.id || ''}`;
                   const subjectName = item.subject?.name || 'غير محدد';
                   const scoreDisplay = item.score !== null && item.score !== undefined ? item.score : '—';
-                  const dateDisplay = item.recordedDate
-                    ? new Date(item.recordedDate).toLocaleDateString('ar-EG-u-nu-latn')
-                    : '—';
+                  const maxDisplay = item.maxScore !== null && item.maxScore !== undefined ? item.maxScore : 20;
+                  const dateDisplay = formatDateSafe(item.recordedDate);
 
                   return (
                     <tr key={item.id}>
@@ -361,19 +379,22 @@ const GradesPage = () => {
                       <td>
                         <span className="badge badge-accent">{subjectName}</span>
                       </td>
-                      <td>{item.examType || 'اختبار'}</td>
+                      <td>
+                        <span className="badge badge-primary">{item.term || 'الثلاثي الأول'}</span>
+                      </td>
+                      <td>{item.examType || 'فرض مراقبة'}</td>
                       <td>
                         <span
                           style={{
                             fontWeight: 800,
-                            color: getScoreColor(item.score),
+                            color: getScoreColor((Number(item.score) / maxDisplay) * 100),
                             fontSize: '1.15rem',
                             background: 'rgba(255,255,255,0.04)',
                             padding: '3px 8px',
                             borderRadius: '6px',
                           }}
                         >
-                          {scoreDisplay}
+                          {scoreDisplay} <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>/ {maxDisplay}</small>
                         </span>
                       </td>
                       <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -456,52 +477,81 @@ const GradesPage = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
                 <div className="form-group">
-                  <label>نوع التقييم</label>
+                  <label>الثلاثي الدراسي *</label>
+                  <select
+                    className="input-field"
+                    value={form.term}
+                    onChange={(e) => setForm({ ...form, term: e.target.value })}
+                  >
+                    <option value="الثلاثي الأول">الثلاثي الأول (Trimestre 1)</option>
+                    <option value="الثلاثي الثاني">الثلاثي الثاني (Trimestre 2)</option>
+                    <option value="الثلاثي الثالث">الثلاثي الثالث (Trimestre 3)</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>نوع التقييم / الفرض *</label>
                   <select
                     className="input-field"
                     value={form.examType}
                     onChange={(e) => setForm({ ...form, examType: e.target.value })}
                   >
-                    <option value="اختبار شهري">اختبار شهري</option>
-                    <option value="اختبار نصفي">اختبار نصفي</option>
-                    <option value="اختبار نهائي">اختبار نهائي</option>
-                    <option value="واجب منزلي">واجب منزلي</option>
-                    <option value="مشروع تطبيقي">مشروع تطبيقي</option>
-                    <option value="مشاركة شفهية">مشاركة وتفاعل</option>
+                    <option value="فرض مراقبة 1">فرض مراقبة 1 (Contrôle 1)</option>
+                    <option value="فرض مراقبة 2">فرض مراقبة 2 (Contrôle 2)</option>
+                    <option value="فرض تأليفي">فرض تأليفي (Synthèse)</option>
+                    <option value="تقييم مستمر / شفاهي">تقييم مستمر / شفاهي</option>
+                    <option value="واجب منزلي / مشروع">واجب منزلي / مشروع</option>
                   </select>
                 </div>
+              </div>
 
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
                 <div className="form-group">
-                  <label>الدرجة (من 100) *</label>
+                  <label>العدد المسند *</label>
                   <input
                     type="number"
-                    step="0.5"
+                    step="0.25"
                     min="0"
-                    max="100"
+                    max={Number(form.maxScore || 20)}
                     className="input-field"
-                    placeholder="مثال: 95"
+                    placeholder="مثال: 16.5"
                     value={form.score}
                     onChange={(e) => setForm({ ...form, score: e.target.value })}
                     required
                   />
                 </div>
+
+                <div className="form-group">
+                  <label>من مجموع (سلم التقييم)</label>
+                  <select
+                    className="input-field"
+                    value={form.maxScore}
+                    onChange={(e) => setForm({ ...form, maxScore: e.target.value })}
+                  >
+                    <option value="20">من 20 (النظام التونسي الرسمي)</option>
+                    <option value="10">من 10</option>
+                    <option value="40">من 40</option>
+                    <option value="100">من 100</option>
+                  </select>
+                </div>
               </div>
 
               <div className="form-group">
-                <label>تاريخ الرصد</label>
+                <label>تاريخ إجراء الاختبار / التقييم *</label>
                 <input
                   type="date"
                   className="input-field"
                   value={form.recordedDate}
                   onChange={(e) => setForm({ ...form, recordedDate: e.target.value })}
+                  required
                 />
               </div>
 
               <div className="form-group">
-                <label>ملاحظات إضافية</label>
+                <label>ملاحظات المعلم والتقدير</label>
                 <input
                   className="input-field"
-                  placeholder="ملاحظات المعلم حول أداء الطالب"
+                  placeholder="مثال: ممتاز، عمل جيد، يحتاج لمزيد من الاجتهاد..."
                   value={form.comments}
                   onChange={(e) => setForm({ ...form, comments: e.target.value })}
                 />

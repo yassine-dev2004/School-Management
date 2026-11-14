@@ -60,10 +60,11 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
     });
   }
 
-  ErpBadgeTone _scoreTone(double score) {
-    if (score >= 90) return ErpBadgeTone.success;
-    if (score >= 70) return ErpBadgeTone.neutral;
-    if (score >= 50) return ErpBadgeTone.warning;
+  ErpBadgeTone _scoreTone(double score, [double maxScore = 20.0]) {
+    final pct = maxScore > 0 ? (score / maxScore) * 100 : score;
+    if (pct >= 80) return ErpBadgeTone.success;
+    if (pct >= 60) return ErpBadgeTone.neutral;
+    if (pct >= 50) return ErpBadgeTone.warning;
     return ErpBadgeTone.danger;
   }
 
@@ -312,6 +313,10 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
         ...grades.map((g) {
           final score =
               g['score'] is num ? (g['score'] as num).toDouble() : 0.0;
+          final maxScore =
+              g['maxScore'] is num ? (g['maxScore'] as num).toDouble() : 20.0;
+          final term = (g['term'] ?? '').toString();
+
           return Container(
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
@@ -332,7 +337,7 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '${g['examType'] ?? 'اختبار'} • ${formatDateShort(g['recordedDate'])}',
+                        '${term.isNotEmpty ? "$term • " : ""}${g['examType'] ?? 'اختبار'} • ${formatDateShort(g['recordedDate'])}',
                         style: const TextStyle(
                             fontSize: 12, color: ErpColors.textMuted),
                       ),
@@ -349,7 +354,9 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                     ],
                   ),
                 ),
-                ErpBadge(label: '$score', tone: _scoreTone(score)),
+                ErpBadge(
+                    label: '$score / $maxScore',
+                    tone: _scoreTone(score, maxScore)),
               ],
             ),
           );
@@ -413,10 +420,26 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                     size: 16, color: ErpColors.textMuted),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    formatDateShort(a['date']),
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 13.5),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        formatDateShort(a['date']),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 13.5),
+                      ),
+                      if ((a['remarks'] ?? '').toString().trim().isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'ملاحظة: ${a['remarks']}',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: ErpColors.textSecondary,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 ErpBadge(label: status, tone: _attendanceTone(status)),

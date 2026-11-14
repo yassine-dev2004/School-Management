@@ -402,8 +402,11 @@ class ErpEmptyState extends StatelessWidget {
 
 String formatDateShort(dynamic raw) {
   if (raw == null) return '—';
-  final str = raw.toString();
-  if (str.length >= 10) return str.substring(0, 10);
-  return str;
+  final str = raw.toString().trim();
+  final m = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch(str);
+  if (m != null) {
+    return '${m.group(1)}-${m.group(2)}-${m.group(3)}';
+  }
+  return str.length >= 10 ? str.substring(0, 10) : str;
 }
 

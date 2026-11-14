@@ -1,5 +1,6 @@
 package com.school.management.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.Date;
@@ -27,12 +28,15 @@ public class Grade {
     private Subject subject;
 
     @Column(nullable = false)
-    private String examType; // Assignment, Test, Final Exam
+    private String examType; // Assignment, Test, Final Exam, فرض مراقبة, فرض تأليفي
 
     private Double score;
+    private Double maxScore = 20.0;
+    private String term; // الثلاثي الأول, الثلاثي الثاني, الثلاثي الثالث
     private String comments;
 
     @Temporal(TemporalType.DATE)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "Africa/Tunis")
     private Date recordedDate;
 
     public Grade() {}
@@ -45,6 +49,7 @@ public class Grade {
         this.score = score;
         this.comments = comments;
         this.recordedDate = recordedDate;
+        this.maxScore = 20.0;
     }
 
     public Long getId() {
@@ -85,6 +90,22 @@ public class Grade {
 
     public void setScore(Double score) {
         this.score = score;
+    }
+
+    public Double getMaxScore() {
+        return maxScore != null ? maxScore : 20.0;
+    }
+
+    public void setMaxScore(Double maxScore) {
+        this.maxScore = maxScore != null ? maxScore : 20.0;
+    }
+
+    public String getTerm() {
+        return term;
+    }
+
+    public void setTerm(String term) {
+        this.term = term;
     }
 
     public String getComments() {

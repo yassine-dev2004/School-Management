@@ -18,6 +18,35 @@ public class TeacherController {
     @Autowired
     private TeacherService teacherService;
 
+    @Autowired
+    private com.school.management.repository.SchoolClassRepository schoolClassRepository;
+
+    @GetMapping("/me")
+    @PreAuthorize("hasAuthority('TEACHER') or hasAuthority('ADMINISTRATOR')")
+    public ResponseEntity<?> getMyTeacherProfile() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof com.school.management.security.UserDetailsImpl) {
+            com.school.management.security.UserDetailsImpl userDetails = (com.school.management.security.UserDetailsImpl) auth.getPrincipal();
+            return teacherService.getTeacherById(userDetails.getId())
+                    .map(teacher -> {
+                        java.util.Map<String, Object> resp = new java.util.HashMap<>();
+                        resp.put("id", teacher.getId());
+                        resp.put("firstName", teacher.getUser() != null ? teacher.getUser().getFirstName() : "");
+                        resp.put("lastName", teacher.getUser() != null ? teacher.getUser().getLastName() : "");
+                        resp.put("username", teacher.getUser() != null ? teacher.getUser().getUsername() : "");
+                        resp.put("email", teacher.getUser() != null ? teacher.getUser().getEmail() : "");
+                        resp.put("phone", teacher.getUser() != null ? teacher.getUser().getPhone() : "");
+                        resp.put("qualification", teacher.getQualification());
+                        resp.put("joiningDate", teacher.getJoiningDate());
+                        resp.put("subjects", teacher.getSubjects());
+                        resp.put("classes", schoolClassRepository.findByTeacherId(teacher.getId()));
+                        return ResponseEntity.ok(resp);
+                    })
+                    .orElse(ResponseEntity.notFound().build());
+        }
+        return ResponseEntity.status(401).build();
+    }
+
     @GetMapping
     @PreAuthorize("hasAuthority('ADMINISTRATOR')")
     public List<Teacher> getAllTeachers() {

@@ -22,6 +22,15 @@ public class SchoolClassController {
     @GetMapping
     @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER') or hasAuthority('PARENT') or hasAuthority('STUDENT')")
     public List<SchoolClass> getAllClasses() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof com.school.management.security.UserDetailsImpl) {
+            com.school.management.security.UserDetailsImpl userDetails = (com.school.management.security.UserDetailsImpl) auth.getPrincipal();
+            boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ADMINISTRATOR"));
+            boolean isTeacher = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("TEACHER"));
+            if (isTeacher && !isAdmin) {
+                return schoolClassService.getClassesByTeacherId(userDetails.getId());
+            }
+        }
         return schoolClassService.getAllClasses();
     }
 

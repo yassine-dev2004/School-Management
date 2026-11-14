@@ -20,6 +20,15 @@ public class DataSeeder implements CommandLineRunner {
     private UserRepository userRepository;
 
     @Autowired
+    private TeacherRepository teacherRepository;
+
+    @Autowired
+    private SubjectRepository subjectRepository;
+
+    @Autowired
+    private SchoolClassRepository schoolClassRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
@@ -50,6 +59,48 @@ public class DataSeeder implements CommandLineRunner {
 
                 userRepository.save(admin);
                 System.out.println(">>> DataSeeder: Initial Admin account 'admin' / 'admin123' created successfully.");
+            }
+
+            // 3. Seed Default Teacher if missing
+            if (!userRepository.existsByUsername("teacher")) {
+                User teacherUser = new User();
+                teacherUser.setUsername("teacher");
+                teacherUser.setEmail("teacher@school.com");
+                teacherUser.setPassword(passwordEncoder.encode("teacher123"));
+                teacherUser.setFirstName("أحمد");
+                teacherUser.setLastName("المنصوري");
+                teacherUser.setPhone("20111222");
+
+                Set<Role> roles = new HashSet<>();
+                roleRepository.findByName(RoleName.TEACHER).ifPresent(roles::add);
+                teacherUser.setRoles(roles);
+
+                User savedUser = userRepository.save(teacherUser);
+
+                Teacher teacher = new Teacher();
+                teacher.setUser(savedUser);
+                teacher.setQualification("أستاذ تعليم ابتدائي أول");
+                teacher.setJoiningDate("2024-09-15");
+
+                // Attach available subjects
+                java.util.List<Subject> allSubjects = subjectRepository.findAll();
+                if (!allSubjects.isEmpty()) {
+                    teacher.setSubjects(new HashSet<>(allSubjects));
+                }
+
+                Teacher savedTeacher = teacherRepository.save(teacher);
+
+                // Assign homeroom teacher to first class if unassigned
+                java.util.List<SchoolClass> classes = schoolClassRepository.findAll();
+                for (SchoolClass sc : classes) {
+                    if (sc.getTeacher() == null) {
+                        sc.setTeacher(savedTeacher);
+                        schoolClassRepository.save(sc);
+                        break;
+                    }
+                }
+
+                System.out.println(">>> DataSeeder: Initial Teacher account 'teacher' / 'teacher123' created successfully.");
             }
         } catch (Exception e) {
             System.err.println(">>> DataSeeder warning: " + e.getMessage());

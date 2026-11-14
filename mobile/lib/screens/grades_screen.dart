@@ -19,10 +19,7 @@ class _GradesScreenState extends State<GradesScreen> {
   List<dynamic> _subjects = [];
   String _search = '';
   String _subjectFilterId = '';
-  String _role = 'TEACHER';
   bool _loading = true;
-
-  bool get _isAdmin => ApiService.isAdminRole(_role);
 
   @override
   void initState() {
@@ -38,8 +35,6 @@ class _GradesScreenState extends State<GradesScreen> {
 
   Future<void> _loadAll() async {
     setState(() => _loading = true);
-    final session = await ApiService.getUserSession();
-    _role = session['role'] ?? 'TEACHER';
     final results = await Future.wait([
       ApiService.getList('/grades'),
       ApiService.getList('/students'),
@@ -71,10 +66,11 @@ class _GradesScreenState extends State<GradesScreen> {
     }).toList();
   }
 
-  ErpBadgeTone _scoreTone(double score) {
-    if (score >= 90) return ErpBadgeTone.success;
-    if (score >= 70) return ErpBadgeTone.info;
-    if (score >= 50) return ErpBadgeTone.warning;
+  ErpBadgeTone _scoreTone(double score, [double maxScore = 20.0]) {
+    final pct = maxScore > 0 ? (score / maxScore) * 100 : score;
+    if (pct >= 80) return ErpBadgeTone.success;
+    if (pct >= 60) return ErpBadgeTone.info;
+    if (pct >= 50) return ErpBadgeTone.warning;
     return ErpBadgeTone.danger;
   }
 
@@ -105,9 +101,12 @@ class _GradesScreenState extends State<GradesScreen> {
         (_students.isNotEmpty ? _students.first['id'].toString() : '');
     String subjectId = grade?['subject']?['id']?.toString() ??
         (_subjects.isNotEmpty ? _subjects.first['id'].toString() : '');
-    String examType = grade?['examType']?.toString() ?? 'اختبار شهري';
+    String examType = grade?['examType']?.toString() ?? 'Devoir de contrôle (فرض مراقبة)';
+    String term = grade?['term']?.toString() ?? 'الثلاثي الأول';
     final scoreCtrl = TextEditingController(
         text: grade?['score'] != null ? grade['score'].toString() : '');
+    final maxScoreCtrl = TextEditingController(
+        text: grade?['maxScore'] != null ? grade['maxScore'].toString() : '20');
     final commentsCtrl =
         TextEditingController(text: grade?['comments']?.toString() ?? '');
     final dateCtrl = TextEditingController(
@@ -118,13 +117,25 @@ class _GradesScreenState extends State<GradesScreen> {
     bool saving = false;
 
     const examTypes = [
+      'Devoir de contrôle (فرض مراقبة)',
+      'Devoir de synthèse (فرض تأليفي)',
+      'Contrôle continu (مراقبة مستمرة)',
+      'Oral / Pratique (شفاهي / تطبيقي)',
       'اختبار شهري',
-      'امتحان منتصف الفصل',
       'امتحان نهائي',
       'واجب / نشاط',
     ];
     if (!examTypes.contains(examType)) {
       examType = examTypes.first;
+    }
+
+    const terms = [
+      'الثلاثي الأول',
+      'الثلاثي الثاني',
+      'الثلاثي الثالث',
+    ];
+    if (!terms.contains(term)) {
+      term = terms.first;
     }
 
     await showModalBottomSheet(
@@ -195,29 +206,46 @@ class _GradesScreenState extends State<GradesScreen> {
                   onChanged: (v) => setModalState(() => subjectId = v ?? ''),
                 ),
                 const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  value: term,
+                  decoration: const InputDecoration(labelText: 'الفصل / الثلاثي'),
+                  items: terms
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                      .toList(),
+                  onChanged: (v) => setModalState(() => term = v ?? terms.first),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  value: examType,
+                  decoration: const InputDecoration(labelText: 'نوع التقييم'),
+                  items: examTypes
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                      .toList(),
+                  onChanged: (v) =>
+                      setModalState(() => examType = v ?? examTypes.first),
+                ),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: examType,
-                        decoration:
-                            const InputDecoration(labelText: 'نوع التقييم'),
-                        items: examTypes
-                            .map((t) =>
-                                DropdownMenuItem(value: t, child: Text(t)))
-                            .toList(),
-                        onChanged: (v) =>
-                            setModalState(() => examType = v ?? examTypes.first),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
+                      flex: 3,
                       child: TextField(
                         controller: scoreCtrl,
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
                         decoration:
-                            const InputDecoration(labelText: 'الدرجة (0-100) *'),
+                            const InputDecoration(labelText: 'الدرجة المسندة *'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 2,
+                      child: TextField(
+                        controller: maxScoreCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        decoration:
+                            const InputDecoration(labelText: 'من مجموع (Max)'),
                       ),
                     ),
                   ],
@@ -226,13 +254,13 @@ class _GradesScreenState extends State<GradesScreen> {
                 TextField(
                   controller: dateCtrl,
                   decoration:
-                      const InputDecoration(labelText: 'التاريخ (YYYY-MM-DD)'),
+                      const InputDecoration(labelText: 'تاريخ الإسناد (YYYY-MM-DD)'),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: commentsCtrl,
                   maxLines: 2,
-                  decoration: const InputDecoration(labelText: 'ملاحظات'),
+                  decoration: const InputDecoration(labelText: 'ملاحظات (اختياري)'),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
@@ -240,13 +268,16 @@ class _GradesScreenState extends State<GradesScreen> {
                       ? null
                       : () async {
                           final scoreNum = double.tryParse(scoreCtrl.text.trim());
+                          final maxScoreNum =
+                              double.tryParse(maxScoreCtrl.text.trim()) ?? 20.0;
                           if (studentId.isEmpty ||
                               subjectId.isEmpty ||
                               scoreNum == null ||
                               scoreNum < 0 ||
-                              scoreNum > 100) {
+                              scoreNum > maxScoreNum) {
                             showErpToast(
-                                context, 'يرجى اختيار الطالب والمادة وإدخال درجة بين 0 و 100',
+                                context,
+                                'يرجى اختيار الطالب والمادة وإدخال درجة بين 0 و $maxScoreNum',
                                 isWarning: true);
                             return;
                           }
@@ -256,6 +287,8 @@ class _GradesScreenState extends State<GradesScreen> {
                             'subject': {'id': int.parse(subjectId)},
                             'examType': examType,
                             'score': scoreNum,
+                            'maxScore': maxScoreNum,
+                            'term': term,
                             'comments': commentsCtrl.text.trim(),
                             'recordedDate': dateCtrl.text.trim(),
                           };
@@ -345,6 +378,10 @@ class _GradesScreenState extends State<GradesScreen> {
                       final score = g['score'] is num
                           ? (g['score'] as num).toDouble()
                           : 0.0;
+                      final maxScore = g['maxScore'] is num
+                          ? (g['maxScore'] as num).toDouble()
+                          : 20.0;
+                      final term = (g['term'] ?? '').toString();
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
@@ -368,7 +405,7 @@ class _GradesScreenState extends State<GradesScreen> {
                                               fontWeight: FontWeight.w800),
                                         ),
                                         Text(
-                                          '$subjectName • ${g['examType'] ?? 'اختبار'}',
+                                          '${term.isNotEmpty ? "$term • " : ""}$subjectName • ${g['examType'] ?? 'اختبار'}',
                                           style: const TextStyle(
                                               fontSize: 12.5,
                                               color: ErpColors.textMuted),
@@ -377,8 +414,8 @@ class _GradesScreenState extends State<GradesScreen> {
                                     ),
                                   ),
                                   ErpBadge(
-                                    label: '$score',
-                                    tone: _scoreTone(score),
+                                    label: '$score / $maxScore',
+                                    tone: _scoreTone(score, maxScore),
                                   ),
                                 ],
                               ),
@@ -402,17 +439,15 @@ class _GradesScreenState extends State<GradesScreen> {
                                         size: 16),
                                     label: const Text('تعديل'),
                                   ),
-                                  if (_isAdmin) ...[
-                                    const SizedBox(width: 8),
-                                    OutlinedButton.icon(
-                                      style: OutlinedButton.styleFrom(
-                                          foregroundColor: ErpColors.danger),
-                                      onPressed: () => _deleteGrade(g),
-                                      icon: const Icon(Icons.delete_outline,
-                                          size: 16),
-                                      label: const Text('حذف'),
-                                    ),
-                                  ],
+                                  const SizedBox(width: 8),
+                                  OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                        foregroundColor: ErpColors.danger),
+                                    onPressed: () => _deleteGrade(g),
+                                    icon: const Icon(Icons.delete_outline,
+                                        size: 16),
+                                    label: const Text('حذف'),
+                                  ),
                                 ],
                               ),
                             ],

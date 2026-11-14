@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Users, ClipboardList, UserCheck, BookOpen, Calendar, ChevronDown, RefreshCw } from 'lucide-react';
 import api from '../../api/axios';
+import { formatDateSafe } from '../../utils/dateUtils';
 import '../admin/CrudPage.css';
 
 const ChildrenPage = () => {
@@ -159,10 +160,11 @@ const ChildrenPage = () => {
                           <tr>
                             <th>#</th>
                             <th>المادة</th>
-                            <th>نوع الاختبار</th>
-                            <th>الدرجة</th>
+                            <th>الثلاثي</th>
+                            <th>نوع التقييم</th>
+                            <th>العدد المسند</th>
                             <th>ملاحظات</th>
-                            <th>التاريخ</th>
+                            <th>تاريخ التقييم</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -170,14 +172,15 @@ const ChildrenPage = () => {
                             <tr key={g.id || idx}>
                               <td>{idx + 1}</td>
                               <td style={{ fontWeight: 600 }}>{g.subjectName}</td>
-                              <td><span className="badge badge-primary">{g.examType}</span></td>
+                              <td><span className="badge badge-primary">{g.term || 'الثلاثي الأول'}</span></td>
+                              <td><span className="badge badge-accent">{g.examType}</span></td>
                               <td>
                                 <span style={{ fontWeight: 700, color: getScoreColor(g.score), fontSize: '1.1rem' }}>
-                                  {g.score}
+                                  {g.score} <small style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>/ {g.maxScore || 20}</small>
                                 </span>
                               </td>
                               <td>{g.comments || '—'}</td>
-                              <td>{g.recordedDate ? new Date(g.recordedDate).toLocaleDateString('ar-EG-u-nu-latn') : '—'}</td>
+                              <td>{formatDateSafe(g.recordedDate, { year: 'numeric', month: 'short', day: 'numeric' })}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -258,6 +261,7 @@ const ChildrenPage = () => {
                               <th>#</th>
                               <th>التاريخ</th>
                               <th>الحالة</th>
+                              <th>ملاحظات / تبرير</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -269,11 +273,16 @@ const ChildrenPage = () => {
                                   <td>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                       <Calendar size={14} color="var(--text-muted)" />
-                                      {a.date ? new Date(a.date).toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
+                                      {formatDateSafe(a.date)}
                                     </div>
                                   </td>
                                   <td>
                                     <span className={`badge ${badge.class}`}>{badge.text}</span>
+                                  </td>
+                                  <td>
+                                    <span style={{ color: a.remarks ? 'var(--text-main)' : 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                      {a.remarks || '—'}
+                                    </span>
                                   </td>
                                 </tr>
                               );

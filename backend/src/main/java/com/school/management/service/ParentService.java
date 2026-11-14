@@ -103,14 +103,19 @@ public class ParentService {
             // Real-time Grades fetch
             List<Grade> grades = gradeRepository.findByStudentId(child.getId());
             List<Map<String, Object>> gradesList = new ArrayList<>();
+            java.text.SimpleDateFormat dateFmt = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            dateFmt.setTimeZone(TimeZone.getTimeZone("Africa/Tunis"));
+
             for (Grade g : grades) {
                 Map<String, Object> gradeMap = new HashMap<>();
                 gradeMap.put("id", g.getId());
                 gradeMap.put("subjectName", g.getSubject() != null && g.getSubject().getName() != null ? g.getSubject().getName() : "مادة غير محددة");
                 gradeMap.put("examType", g.getExamType() != null ? g.getExamType() : "اختبار");
                 gradeMap.put("score", g.getScore());
+                gradeMap.put("maxScore", g.getMaxScore() != null ? g.getMaxScore() : 20.0);
+                gradeMap.put("term", g.getTerm() != null ? g.getTerm() : "الثلاثي الأول");
                 gradeMap.put("comments", g.getComments() != null ? g.getComments() : "");
-                gradeMap.put("recordedDate", g.getRecordedDate());
+                gradeMap.put("recordedDate", g.getRecordedDate() != null ? dateFmt.format(g.getRecordedDate()) : null);
                 gradesList.add(gradeMap);
 
                 if (g.getScore() != null) {
@@ -126,8 +131,9 @@ public class ParentService {
             for (Attendance a : attendanceList) {
                 Map<String, Object> attMap = new HashMap<>();
                 attMap.put("id", a.getId());
-                attMap.put("date", a.getDate());
+                attMap.put("date", a.getDate() != null ? dateFmt.format(a.getDate()) : null);
                 attMap.put("status", a.getStatus());
+                attMap.put("remarks", a.getRemarks() != null ? a.getRemarks() : "");
                 attendanceData.add(attMap);
 
                 totalAttendance++;

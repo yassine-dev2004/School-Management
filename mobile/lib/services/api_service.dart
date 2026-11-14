@@ -316,6 +316,8 @@ class ApiService {
         'totalParents': d['parentsCount'] ?? 0,
         'totalHomework': d['homeworkCount'] ?? 0,
         'attendanceRate': d['attendanceRate'] ?? 0,
+        'checkedInToday': d['checkedInToday'] == true,
+        'todayStatus': d['todayStatus'],
       };
     }
 
@@ -410,6 +412,30 @@ class ApiService {
 
   static Future<Map<String, dynamic>?> getProfile() async {
     final res = await get('/users/profile');
+    if (res.success && res.data is Map<String, dynamic>) {
+      return res.data as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  // Teacher Self-Attendance & Profile
+  static Future<ApiResult<dynamic>> teacherCheckIn(String status, [String? remarks]) async {
+    return post('/teacher-attendance/check-in', {
+      'status': status,
+      if (remarks != null && remarks.trim().isNotEmpty) 'remarks': remarks.trim(),
+    });
+  }
+
+  static Future<ApiResult<dynamic>> getTeacherTodayAttendance() async {
+    return get('/teacher-attendance/me/today');
+  }
+
+  static Future<List<dynamic>> getTeacherAttendanceHistory() async {
+    return getList('/teacher-attendance/me');
+  }
+
+  static Future<Map<String, dynamic>?> getTeacherProfile() async {
+    final res = await get('/teachers/me');
     if (res.success && res.data is Map<String, dynamic>) {
       return res.data as Map<String, dynamic>;
     }
