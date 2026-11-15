@@ -409,25 +409,16 @@ select.input-field {
 
 .data-table tbody tr {
   transition: all var(--transition-normal);
-  position: relative;
-}
-
-.data-table tbody tr::before {
-  content: '';
-  position: absolute;
-  top: 0; bottom: 0; right: 0;
-  width: 0px;
-  background: var(--primary);
-  transition: width var(--transition-normal);
 }
 
 .data-table tbody tr:hover {
   background: var(--bg-surface-hover);
-  z-index: 1;
 }
-.data-table tbody tr:hover::before {
-  width: 3px;
+
+.data-table tbody tr:hover td:first-child {
+  border-right: 3px solid var(--primary);
 }
+
 .data-table tbody tr:hover td {
   color: var(--text-main);
 }
