@@ -27,7 +27,7 @@ public class SchoolDocumentController {
     private SchoolDocumentService documentService;
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('ROLE_ADMINISTRATOR') or hasAuthority('TEACHER') or hasAuthority('ROLE_TEACHER')")
     public ResponseEntity<?> uploadDocument(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "title", required = false) String title,
@@ -52,20 +52,20 @@ public class SchoolDocumentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('ROLE_ADMINISTRATOR') or hasAuthority('TEACHER') or hasAuthority('ROLE_TEACHER')")
     public ResponseEntity<List<SchoolDocument>> getAllDocuments() {
         return ResponseEntity.ok(documentService.getAllDocuments());
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('ROLE_ADMINISTRATOR') or hasAuthority('TEACHER') or hasAuthority('ROLE_TEACHER')")
     public ResponseEntity<List<SchoolDocument>> getMyDocuments(Authentication authentication) {
         String username = authentication != null ? authentication.getName() : "";
         return ResponseEntity.ok(documentService.getDocumentsBySubmitter(username));
     }
 
     @GetMapping("/class/{classId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('ROLE_ADMINISTRATOR') or hasAuthority('TEACHER') or hasAuthority('ROLE_TEACHER')")
     public ResponseEntity<List<SchoolDocument>> getDocumentsByClass(@PathVariable Long classId) {
         return ResponseEntity.ok(documentService.getDocumentsByClass(classId));
     }
@@ -104,7 +104,7 @@ public class SchoolDocumentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('ROLE_ADMINISTRATOR') or hasAuthority('TEACHER') or hasAuthority('ROLE_TEACHER')")
     public ResponseEntity<?> deleteDocument(@PathVariable Long id) {
         boolean deleted = documentService.deleteDocument(id);
         if (deleted) {
