@@ -18,6 +18,8 @@ public class SchoolClass {
 
     private String section;
 
+    private Double annualFee = 1200.0;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "teacher_id")
     @JsonIgnoreProperties({"classes", "subjects", "hibernateLazyInitializer", "handler"})
@@ -66,6 +68,14 @@ public class SchoolClass {
 
     public void setSection(String section) {
         this.section = section;
+    }
+
+    public Double getAnnualFee() {
+        return annualFee != null ? annualFee : 1200.0;
+    }
+
+    public void setAnnualFee(Double annualFee) {
+        this.annualFee = annualFee;
     }
 
     public Teacher getTeacher() {

@@ -85,6 +85,8 @@ class _ClassesScreenState extends State<ClassesScreen> {
         TextEditingController(text: cls?['name']?.toString() ?? '');
     final sectionCtrl =
         TextEditingController(text: cls?['section']?.toString() ?? '');
+    final annualFeeCtrl =
+        TextEditingController(text: cls?['annualFee']?.toString() ?? '1200');
     final initialTeacherIds = (cls?['teachers'] as List<dynamic>?)
             ?.map((t) => t['id']?.toString() ?? '')
             .where((id) => id.isNotEmpty)
@@ -146,6 +148,15 @@ class _ClassesScreenState extends State<ClassesScreen> {
                   controller: sectionCtrl,
                   decoration:
                       const InputDecoration(labelText: 'الشعبة (مثال: أ)'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: annualFeeCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'الرسوم الدراسية السنوية (دينار تونسي TND) *',
+                    helperText: 'الرسوم المعتمدة لحساب أقساط ومستحقات كل طالب بهذا الفصل',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -233,6 +244,7 @@ class _ClassesScreenState extends State<ClassesScreen> {
                           final payload = {
                             'name': nameCtrl.text.trim(),
                             'section': sectionCtrl.text.trim(),
+                            'annualFee': double.tryParse(annualFeeCtrl.text.trim()) ?? 1200.0,
                             'teacherId': teacherId.isNotEmpty
                                 ? int.parse(teacherId)
                                 : null,
@@ -366,9 +378,19 @@ class _ClassesScreenState extends State<ClassesScreen> {
                                       ],
                                     ),
                                   ),
-                                  ErpBadge(
-                                    label: '$studentsCount طالب',
-                                    tone: ErpBadgeTone.info,
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      ErpBadge(
+                                        label: '$studentsCount طالب',
+                                        tone: ErpBadgeTone.info,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      ErpBadge(
+                                        label: '${c['annualFee'] ?? 1200} د.ت/سنة',
+                                        tone: ErpBadgeTone.success,
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),

@@ -22,6 +22,9 @@ const GradesPage = lazy(() => import('./pages/admin/GradesPage'));
 const HomeworkPage = lazy(() => import('./pages/admin/HomeworkPage'));
 const AnnouncementsPage = lazy(() => import('./pages/admin/AnnouncementsPage'));
 const SettingsPage = lazy(() => import('./pages/admin/SettingsPage'));
+const PaymentsPage = lazy(() => import('./pages/admin/PaymentsPage'));
+const DailyLogbookPage = lazy(() => import('./pages/admin/DailyLogbookPage'));
+const DocumentsPage = lazy(() => import('./pages/admin/DocumentsPage'));
 const ParentDashboard = lazy(() => import('./pages/parent/ParentDashboard'));
 const ChildrenPage = lazy(() => import('./pages/parent/ChildrenPage'));
 const ParentAnnouncementsPage = lazy(() => import('./pages/parent/ParentAnnouncementsPage'));
@@ -56,6 +59,9 @@ const AppRoutes = () => {
           <Route path="subjects" element={<SubjectsPage />} />
           <Route path="attendance" element={<AttendancePage />} />
           <Route path="teacher-attendance" element={<TeacherAttendancePage />} />
+          <Route path="payments" element={<PaymentsPage />} />
+          <Route path="logbook" element={<DailyLogbookPage />} />
+          <Route path="documents" element={<DocumentsPage />} />
           <Route path="grades" element={<GradesPage />} />
           <Route path="homework" element={<HomeworkPage />} />
           <Route path="announcements" element={<AnnouncementsPage />} />

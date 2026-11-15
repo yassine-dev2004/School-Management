@@ -57,8 +57,8 @@ const Login = () => {
           <div className="login-logo">
             <School size={36} />
           </div>
-          <h1>نظام إدارة المدرسة</h1>
-          <p>مرحباً بك، قم بتسجيل الدخول للمتابعة</p>
+          <h1>مدرسة ابن خلدون</h1>
+          <p>Madrasat Ibn Khaldun — مرحباً بك، قم بتسجيل الدخول للمتابعة</p>
         </div>
 
         {error && (
@@ -111,7 +111,7 @@ const Login = () => {
         </form>
 
         <div className="login-footer">
-          <p>© 2025 نظام إدارة المدرسة — جميع الحقوق محفوظة</p>
+          <p>© 2026 مدرسة ابن خلدون (Madrasat Ibn Khaldun) — جميع الحقوق محفوظة</p>
         </div>
       </div>
     </div>

@@ -32,6 +32,21 @@ public class TeacherAttendance {
     private String checkInTime; // e.g. 08:30:15
     private String remarks; // ملاحظات
 
+    private Double hoursCount = 1.0; // عدد ساعات التدريس
+    private String startTime; // وقت البداية
+    private String endTime;   // وقت النهاية
+    private Double hourlyRate = 25.0; // الأجر بالساعة بالدينار التونسي
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "subject_id")
+    @JsonIgnoreProperties({"teachers", "hibernateLazyInitializer", "handler"})
+    private Subject subject;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "class_id")
+    @JsonIgnoreProperties({"teacher", "teachers", "students", "hibernateLazyInitializer", "handler"})
+    private SchoolClass schoolClass;
+
     public TeacherAttendance() {}
 
     public TeacherAttendance(Long id, Teacher teacher, Date date, String status, String checkInTime, String remarks) {
@@ -89,5 +104,53 @@ public class TeacherAttendance {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    public Double getHoursCount() {
+        return hoursCount != null ? hoursCount : 1.0;
+    }
+
+    public void setHoursCount(Double hoursCount) {
+        this.hoursCount = hoursCount;
+    }
+
+    public String getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
+
+    public String getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
+    }
+
+    public Double getHourlyRate() {
+        return hourlyRate != null ? hourlyRate : 25.0;
+    }
+
+    public void setHourlyRate(Double hourlyRate) {
+        this.hourlyRate = hourlyRate;
+    }
+
+    public Subject getSubject() {
+        return subject;
+    }
+
+    public void setSubject(Subject subject) {
+        this.subject = subject;
+    }
+
+    public SchoolClass getSchoolClass() {
+        return schoolClass;
+    }
+
+    public void setSchoolClass(SchoolClass schoolClass) {
+        this.schoolClass = schoolClass;
     }
 }

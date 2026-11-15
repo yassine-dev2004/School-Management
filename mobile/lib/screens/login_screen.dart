@@ -202,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'نظام إدارة المدرسة',
+                      'مدرسة ابن خلدون',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 22,
@@ -212,10 +212,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'مرحباً بك، قم بتسجيل الدخول للمتابعة',
+                      'Madrasat Ibn Khaldun — بوابة الإدارة والمعلمين والأولياء',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 13.5,
+                        fontSize: 13,
                         color: ErpColors.textMuted,
                       ),
                     ),

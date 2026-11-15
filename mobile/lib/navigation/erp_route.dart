@@ -9,6 +9,7 @@ enum ErpRoute {
   grades,
   homework,
   announcements,
+  documents,
   children,
   settings,
 }

@@ -60,6 +60,9 @@ public class SchoolClassService {
         SchoolClass sc = new SchoolClass();
         sc.setName(request.getName());
         sc.setSection(request.getSection());
+        if (request.getAnnualFee() != null) {
+            sc.setAnnualFee(request.getAnnualFee());
+        }
 
         java.util.Set<Teacher> assignedTeachers = new java.util.HashSet<>();
         if (request.getTeacherIds() != null && !request.getTeacherIds().isEmpty()) {
@@ -84,6 +87,9 @@ public class SchoolClassService {
                 .orElseThrow(() -> new RuntimeException("Class not found with ID: " + id));
         sc.setName(request.getName());
         sc.setSection(request.getSection());
+        if (request.getAnnualFee() != null) {
+            sc.setAnnualFee(request.getAnnualFee());
+        }
 
         java.util.Set<Teacher> assignedTeachers = new java.util.HashSet<>();
         if (request.getTeacherIds() != null && !request.getTeacherIds().isEmpty()) {

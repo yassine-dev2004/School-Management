@@ -53,6 +53,13 @@ public class TeacherAttendanceController {
 
         String status = body != null && body.get("status") != null ? body.get("status").toString() : "حاضر";
         String remarks = body != null && body.get("remarks") != null ? body.get("remarks").toString() : "";
+        Double hoursCount = body != null && body.get("hoursCount") != null ? Double.valueOf(body.get("hoursCount").toString()) : null;
+        String startTime = body != null && body.get("startTime") != null ? body.get("startTime").toString() : null;
+        String endTime = body != null && body.get("endTime") != null ? body.get("endTime").toString() : null;
+        Double hourlyRate = body != null && body.get("hourlyRate") != null ? Double.valueOf(body.get("hourlyRate").toString()) : null;
+        Long subjectId = body != null && body.get("subjectId") != null ? Long.valueOf(body.get("subjectId").toString()) : null;
+        Long classId = body != null && body.get("classId") != null ? Long.valueOf(body.get("classId").toString()) : null;
+
         Date date = null;
         if (body != null && body.get("date") != null) {
             try {
@@ -62,7 +69,8 @@ public class TeacherAttendanceController {
             } catch (Exception ignored) {}
         }
 
-        TeacherAttendance att = teacherAttendanceService.recordSelfCheckIn(teacherId, date, status, remarks);
+        TeacherAttendance att = teacherAttendanceService.recordSelfCheckIn(
+                teacherId, date, status, remarks, hoursCount, startTime, endTime, subjectId, classId, hourlyRate);
         return ResponseEntity.ok(att);
     }
 
@@ -122,5 +130,28 @@ public class TeacherAttendanceController {
     public ResponseEntity<?> deleteAttendance(@PathVariable Long id) {
         teacherAttendanceService.delete(id);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/hours-summary")
+    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('TEACHER')")
+    public ResponseEntity<?> getHoursSummary(@RequestParam(required = false) Long teacherId) {
+        Long targetTeacherId = isUserAdmin() && teacherId != null ? teacherId : getCurrentUserId();
+        List<TeacherAttendance> records = teacherAttendanceService.getMyAttendance(targetTeacherId);
+        double totalHours = records.stream()
+                .filter(r -> "حاضر".equalsIgnoreCase(r.getStatus()) || "PRESENT".equalsIgnoreCase(r.getStatus()))
+                .mapToDouble(r -> r.getHoursCount() != null ? r.getHoursCount() : 1.0)
+                .sum();
+        double totalEarnings = records.stream()
+                .filter(r -> "حاضر".equalsIgnoreCase(r.getStatus()) || "PRESENT".equalsIgnoreCase(r.getStatus()))
+                .mapToDouble(r -> (r.getHoursCount() != null ? r.getHoursCount() : 1.0) * (r.getHourlyRate() != null ? r.getHourlyRate() : 25.0))
+                .sum();
+
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("teacherId", targetTeacherId);
+        summary.put("totalSessions", records.size());
+        summary.put("totalHours", Math.round(totalHours * 100.0) / 100.0);
+        summary.put("totalEarnings", Math.round(totalEarnings * 100.0) / 100.0);
+        summary.put("currency", "TND");
+        return ResponseEntity.ok(summary);
     }
 }

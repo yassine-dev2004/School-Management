@@ -426,6 +426,37 @@ class ApiService {
     });
   }
 
+  static Future<ApiResult<dynamic>> teacherCheckInDetailed({
+    required String status,
+    String? remarks,
+    double? hoursCount,
+    double? hourlyRate,
+    int? subjectId,
+    int? classId,
+    String? startTime,
+    String? endTime,
+  }) async {
+    return post('/teacher-attendance/check-in', {
+      'status': status,
+      if (remarks != null && remarks.trim().isNotEmpty) 'remarks': remarks.trim(),
+      if (hoursCount != null) 'hoursCount': hoursCount,
+      if (hourlyRate != null) 'hourlyRate': hourlyRate,
+      if (subjectId != null) 'subjectId': subjectId,
+      if (classId != null) 'classId': classId,
+      if (startTime != null) 'startTime': startTime,
+      if (endTime != null) 'endTime': endTime,
+    });
+  }
+
+  static Future<Map<String, dynamic>?> getTeacherHoursSummary([int? teacherId]) async {
+    final url = teacherId != null ? '/teacher-attendance/hours-summary?teacherId=$teacherId' : '/teacher-attendance/hours-summary';
+    final res = await get(url);
+    if (res.success && res.data is Map<String, dynamic>) {
+      return res.data as Map<String, dynamic>;
+    }
+    return null;
+  }
+
   static Future<ApiResult<dynamic>> getTeacherTodayAttendance() async {
     return get('/teacher-attendance/me/today');
   }
@@ -440,5 +471,89 @@ class ApiService {
       return res.data as Map<String, dynamic>;
     }
     return null;
+  }
+
+  // Payments / Tuition API
+  static Future<Map<String, dynamic>?> getStudentTuitionSummary(int studentId, {String? academicYear}) async {
+    final year = academicYear ?? '2025-2026';
+    final res = await get('/payments/student/$studentId/summary?academicYear=$year');
+    if (res.success && res.data is Map<String, dynamic>) {
+      return res.data as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  static Future<ApiResult<dynamic>> recordPayment(Map<String, dynamic> payload) async {
+    return post('/payments', payload);
+  }
+
+  // Daily Lesson Logbook API
+  static Future<List<dynamic>> getDailyLessonLogs({int? classId, String? date}) async {
+    var url = '/logbook?';
+    if (classId != null) url += 'classId=$classId&';
+    if (date != null && date.isNotEmpty) url += 'date=$date&';
+    return getList(url);
+  }
+
+  static Future<ApiResult<dynamic>> createDailyLessonLog(Map<String, dynamic> payload) async {
+    return post('/logbook', payload);
+  }
+
+  // Documents Repository API
+  static Future<List<dynamic>> getDocuments({int? classId}) async {
+    final url = classId != null ? '/documents/class/$classId' : '/documents';
+    return getList(url);
+  }
+
+  static Future<ApiResult<dynamic>> uploadDocumentBytes({
+    required List<int> bytes,
+    required String filename,
+    required String title,
+    required String purpose,
+    int? classId,
+    String? notes,
+  }) async {
+    try {
+      final base = await getBaseUrl();
+      final uri = Uri.parse('$base/documents/upload');
+      final request = http.MultipartRequest('POST', uri);
+
+      final token = await getToken();
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      final multipartFile = http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: filename,
+      );
+      request.files.add(multipartFile);
+
+      request.fields['title'] = title;
+      request.fields['purpose'] = purpose;
+      if (classId != null) request.fields['classId'] = classId.toString();
+      if (notes != null && notes.isNotEmpty) request.fields['notes'] = notes;
+
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 45));
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+        return ApiResult(success: true, data: decoded, statusCode: response.statusCode);
+      } else {
+        return ApiResult(
+          success: false,
+          message: 'فشل الرفع: رمز الاستجابة ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      return ApiResult(success: false, message: 'خطأ أثناء رفع الملف: $e');
+    }
+  }
+
+  static Future<ApiResult<dynamic>> deleteDocument(int id) async {
+    return delete('/documents/$id');
   }
 }

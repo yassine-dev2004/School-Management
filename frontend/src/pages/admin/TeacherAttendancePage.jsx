@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
   UserCheck, Clock, Calendar, CheckCircle2, AlertCircle,
-  RefreshCw, Plus, Trash2, X, Download, ShieldCheck, ChevronDown
+  RefreshCw, Plus, Trash2, X, Download, DollarSign, BookOpen, School
 } from 'lucide-react';
 import api from '../../api/axios';
 import { formatDateSafe, getTodayIsoDate } from '../../utils/dateUtils';
@@ -16,13 +16,22 @@ const TeacherAttendancePage = () => {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [todayStatus, setTodayStatus] = useState(null);
   const [filterDate, setFilterDate] = useState('');
   const [filterTeacherId, setFilterTeacherId] = useState('');
+  const [hoursSummary, setHoursSummary] = useState(null);
 
   // Self check-in state
   const [checkingIn, setCheckingIn] = useState(false);
   const [selfStatus, setSelfStatus] = useState('حاضر');
+  const [selfHours, setSelfHours] = useState('2.0');
+  const [selfRate, setSelfRate] = useState('25.0');
+  const [selfSubjectId, setSelfSubjectId] = useState('');
+  const [selfClassId, setSelfClassId] = useState('');
+  const [selfStartTime, setSelfStartTime] = useState('08:00');
+  const [selfEndTime, setSelfEndTime] = useState('10:00');
   const [selfRemarks, setSelfRemarks] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString('fr-FR', { timeZone: 'Africa/Tunis' }));
 
@@ -33,7 +42,12 @@ const TeacherAttendancePage = () => {
     teacherId: '',
     status: 'حاضر',
     date: getTodayIsoDate(),
-    checkInTime: '',
+    hoursCount: '2.0',
+    hourlyRate: '25.0',
+    subjectId: '',
+    classId: '',
+    startTime: '08:00',
+    endTime: '10:00',
     remarks: '',
   });
 
@@ -51,29 +65,50 @@ const TeacherAttendancePage = () => {
   }, []);
 
   useEffect(() => {
+    loadClassesAndSubjects();
+  }, []);
+
+  useEffect(() => {
     loadData();
-  }, [filterDate]);
+  }, [filterDate, filterTeacherId]);
+
+  const loadClassesAndSubjects = async () => {
+    try {
+      const [clsRes, subRes] = await Promise.all([
+        api.get('/classes'),
+        api.get('/subjects'),
+      ]);
+      setClasses(Array.isArray(clsRes.data) ? clsRes.data : []);
+      setSubjects(Array.isArray(subRes.data) ? subRes.data : []);
+    } catch {
+      // ignore
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
     try {
       if (teacherOnly) {
-        const [meRes, todayRes] = await Promise.all([
+        const [meRes, todayRes, sumRes] = await Promise.all([
           api.get('/teacher-attendance/me').catch(() => ({ data: [] })),
           api.get('/teacher-attendance/me/today').catch(() => ({ data: { checkedIn: false } })),
+          api.get('/teacher-attendance/hours-summary').catch(() => ({ data: null })),
         ]);
         setItems(Array.isArray(meRes.data) ? meRes.data : []);
         setTodayStatus(todayRes.data);
+        setHoursSummary(sumRes.data);
       } else {
         const url = filterDate ? `/teacher-attendance?date=${filterDate}` : '/teacher-attendance';
-        const [attRes, tRes] = await Promise.all([
+        const [attRes, tRes, sumRes] = await Promise.all([
           api.get(url).catch(() => ({ data: [] })),
           api.get('/teachers').catch(() => ({ data: [] })),
+          api.get(`/teacher-attendance/hours-summary${filterTeacherId ? '?teacherId=' + filterTeacherId : ''}`).catch(() => ({ data: null })),
         ]);
         setItems(Array.isArray(attRes.data) ? attRes.data : []);
         setTeachers(Array.isArray(tRes.data) ? tRes.data : []);
+        setHoursSummary(sumRes.data);
       }
-    } catch (err) {
+    } catch {
       showToast('فشل تحميل سجل حضور المعلمين', 'error');
     } finally {
       setLoading(false);
@@ -87,8 +122,14 @@ const TeacherAttendancePage = () => {
         status: selfStatus,
         remarks: selfRemarks.trim(),
         date: getTodayIsoDate(),
+        hoursCount: selfHours ? Number(selfHours) : 2.0,
+        hourlyRate: selfRate ? Number(selfRate) : 25.0,
+        subjectId: selfSubjectId ? Number(selfSubjectId) : null,
+        classId: selfClassId ? Number(selfClassId) : null,
+        startTime: selfStartTime,
+        endTime: selfEndTime,
       });
-      showToast('تم تسجيل حضورك بنجاح! ✨ نتمنى لك يوماً دراسياً موفقاً', 'success');
+      showToast('تم تسجيل حضورك بالساعة بنجاح! ✨ نتمنى لك حصة موفقة', 'success');
       setTodayStatus({ checkedIn: true, attendance: res.data });
       await loadData();
     } catch (err) {
@@ -111,11 +152,18 @@ const TeacherAttendancePage = () => {
         teacher: { id: Number(adminForm.teacherId) },
         status: adminForm.status,
         date: adminForm.date || getTodayIsoDate(),
-        checkInTime: adminForm.checkInTime || currentTime,
+        checkInTime: adminForm.startTime || currentTime,
+        hoursCount: adminForm.hoursCount ? Number(adminForm.hoursCount) : 2.0,
+        hourlyRate: adminForm.hourlyRate ? Number(adminForm.hourlyRate) : 25.0,
+        startTime: adminForm.startTime,
+        endTime: adminForm.endTime,
         remarks: adminForm.remarks.trim(),
       };
+      if (adminForm.subjectId) payload.subject = { id: Number(adminForm.subjectId) };
+      if (adminForm.classId) payload.schoolClass = { id: Number(adminForm.classId) };
+
       await api.post('/teacher-attendance', payload);
-      showToast('تم تسجيل حضور المعلم بنجاح 🎉', 'success');
+      showToast('تم تسجيل حضور المعلم وحساب ساعاته بنجاح 🎉', 'success');
       setShowAdminModal(false);
       await loadData();
     } catch (err) {
@@ -143,17 +191,6 @@ const TeacherAttendancePage = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const s = (status || '').toLowerCase();
-    if (s === 'حاضر' || s === 'present') {
-      return <span className="badge badge-success"><CheckCircle2 size={13} style={{ display: 'inline', marginLeft: 3 }} /> حاضر</span>;
-    }
-    if (s === 'متأخر' || s === 'late') {
-      return <span className="badge badge-warning"><Clock size={13} style={{ display: 'inline', marginLeft: 3 }} /> متأخر</span>;
-    }
-    return <span className="badge badge-danger"><AlertCircle size={13} style={{ display: 'inline', marginLeft: 3 }} /> غائب</span>;
-  };
-
   const filtered = items.filter((item) => {
     if (!item) return false;
     if (filterTeacherId && String(item.teacher?.id) !== String(filterTeacherId)) {
@@ -167,13 +204,13 @@ const TeacherAttendancePage = () => {
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 className="page-title">{teacherOnly ? 'تسجيل حضوري اليومي' : 'سجل حضور المعلمين'}</h1>
+            <h1 className="page-title">{teacherOnly ? 'تسجيل حضوري بالساعة' : 'حضور المعلمين واحتساب الساعات'}</h1>
             <span className="badge badge-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
               <UserCheck size={14} /> كادر التدريس
             </span>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
-            {teacherOnly ? 'إثبات الحضور الصباحي وتسجيل توقيت الدخول المدرسي' : 'متابعة دوام الأساتذة والمعلمين والانضباط المدرسي'}
+            {teacherOnly ? 'إثبات الحضور لكل حصة واحتساب الساعات المنجزة والمستحقات في مدرسة ابن خلدون' : 'متابعة ساعات عمل الأساتذة واحتساب الأجور بالساعة والمستحقات الشهرية'}
           </p>
         </div>
 
@@ -188,11 +225,41 @@ const TeacherAttendancePage = () => {
           </button>
           {!teacherOnly && (
             <button className="btn btn-primary" onClick={() => setShowAdminModal(true)}>
-              <Plus size={18} /> رصد حضور معلم
+              <Plus size={18} /> رصد حصة وساعات معلم
             </button>
           )}
         </div>
       </div>
+
+      {/* KPI Stats Cards for Hourly Presence */}
+      {hoursSummary && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '14px',
+          marginBottom: '20px'
+        }}>
+          <div className="glass-panel" style={{ padding: '16px', borderRight: '4px solid var(--primary)' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>إجمالي الساعات المنجزة</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>
+              {hoursSummary.totalHours || 0} <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>ساعة</span>
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              {hoursSummary.totalRecords || 0} حصة مسجلة
+            </div>
+          </div>
+
+          <div className="glass-panel" style={{ padding: '16px', borderRight: '4px solid #10b981' }}>
+            <div style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: 600 }}>إجمالي المستحقات التقديرية</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>
+              {(hoursSummary.totalEarnings || 0).toLocaleString()} <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>د.ت</span>
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              حسب سعر الساعة المسجل لكل حصة
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TEACHER SELF CHECK-IN CARD */}
       {teacherOnly && (
@@ -216,54 +283,95 @@ const TeacherAttendancePage = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid var(--success)', padding: '10px 16px', borderRadius: '10px', color: 'var(--success)' }}>
                 <CheckCircle2 size={20} />
                 <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                  تم تسجيل حضورك اليوم بنجاح الساعة {todayStatus.attendance?.checkInTime || ''} ({todayStatus.attendance?.status || 'حاضر'})
+                  تم تسجيل حصة اليوم الساعة {todayStatus.attendance?.startTime || todayStatus.attendance?.checkInTime || ''} ({todayStatus.attendance?.hoursCount || 2} س - {todayStatus.attendance?.status || 'حاضر'})
                 </span>
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid #f59e0b', padding: '8px 14px', borderRadius: '10px', color: '#f59e0b' }}>
                 <AlertCircle size={18} />
-                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>لم تسجل حضورك لهذا اليوم بعد</span>
+                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>يمكنك تسجيل حضور حصتك الآن</span>
               </div>
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginTop: '20px', alignItems: 'end' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginTop: '20px' }}>
             <div>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                حالة الحضور
+              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                الفصل الدراسي
               </label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {['حاضر', 'متأخر'].map((st) => (
-                  <button
-                    key={st}
-                    type="button"
-                    onClick={() => setSelfStatus(st)}
-                    style={{
-                      flex: 1,
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      border: selfStatus === st ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                      background: selfStatus === st ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                      color: selfStatus === st ? 'var(--primary)' : 'var(--text-main)',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    {st === 'حاضر' ? '✅ حاضر' : '⏱️ متأخر'}
-                  </button>
+              <select
+                className="input-field"
+                value={selfClassId}
+                onChange={(e) => setSelfClassId(e.target.value)}
+              >
+                <option value="">-- اختر الفصل --</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name} {c.section ? `(${c.section})` : ''}</option>
                 ))}
-              </div>
+              </select>
             </div>
 
             <div>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                ملاحظات أو مبرر (اختياري)
+              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                المادة الدراسية
+              </label>
+              <select
+                className="input-field"
+                value={selfSubjectId}
+                onChange={(e) => setSelfSubjectId(e.target.value)}
+              >
+                <option value="">-- اختر المادة --</option>
+                {subjects.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                عدد ساعات الحصة
+              </label>
+              <input
+                type="number"
+                step="0.5"
+                min="0.5"
+                max="12"
+                className="input-field"
+                value={selfHours}
+                onChange={(e) => setSelfHours(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                توقيت الحصة (من - إلى)
+              </label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <input
+                  type="time"
+                  className="input-field"
+                  value={selfStartTime}
+                  onChange={(e) => setSelfStartTime(e.target.value)}
+                />
+                <input
+                  type="time"
+                  className="input-field"
+                  value={selfEndTime}
+                  onChange={(e) => setSelfEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', marginTop: '14px', alignItems: 'end' }}>
+            <div>
+              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                ملاحظات أو تفاصيل الحصة
               </label>
               <input
                 type="text"
                 className="input-field"
-                placeholder="مثال: الحصة الصباحية، تأخر 5 دقائق..."
+                placeholder="مثال: حصة استدراك، حصة صباحية عادية..."
                 value={selfRemarks}
                 onChange={(e) => setSelfRemarks(e.target.value)}
               />
@@ -278,7 +386,7 @@ const TeacherAttendancePage = () => {
                 disabled={checkingIn}
               >
                 <CheckCircle2 size={18} />
-                {checkingIn ? 'جاري التسجيل...' : todayStatus?.checkedIn ? 'تحديث تسجيل حضوري' : 'تسجيل حضوري الآن'}
+                {checkingIn ? 'جاري التسجيل...' : 'تسجيل حضور الحصة بالساعة'}
               </button>
             </div>
           </div>
@@ -334,147 +442,224 @@ const TeacherAttendancePage = () => {
                   <th>#</th>
                   {!teacherOnly && <th>اسم المعلم</th>}
                   <th>التاريخ</th>
-                  <th>توقيت التسجيل</th>
+                  <th>الفصل والمادة</th>
+                  <th>التوقيت</th>
+                  <th>عدد الساعات</th>
+                  <th>الأجر المقدر</th>
                   <th>الحالة</th>
                   <th>ملاحظات</th>
                   {!teacherOnly && <th>إجراءات</th>}
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((item, idx) => {
-                  const teacherName = item.teacher?.user?.firstName
-                    ? `${item.teacher.user.firstName} ${item.teacher.user.lastName}`
-                    : `معلم #${item.teacher?.id || ''}`;
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={teacherOnly ? 8 : 10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                      لا توجد سجلات حضور
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((item, idx) => {
+                    const teacherName = item.teacher?.user?.firstName
+                      ? `${item.teacher.user.firstName} ${item.teacher.user.lastName}`
+                      : `معلم #${item.teacher?.id || ''}`;
+                    const hours = item.hoursCount || 2.0;
+                    const rate = item.hourlyRate || 25.0;
+                    const earnings = Math.round(hours * rate * 10) / 10;
 
-                  return (
-                    <tr key={item.id}>
-                      <td>{idx + 1}</td>
-                      {!teacherOnly && (
-                        <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>
-                          {teacherName}
-                          <small style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                            {item.teacher?.user?.email}
-                          </small>
-                        </td>
-                      )}
-                      <td>{formatDateSafe(item.date)}</td>
-                      <td>
-                        <span style={{ direction: 'ltr', display: 'inline-block', fontFamily: 'monospace', fontWeight: 600 }}>
-                          {item.checkInTime || '—'}
-                        </span>
-                      </td>
-                      <td>{getStatusBadge(item.status)}</td>
-                      <td style={{ color: item.remarks ? 'var(--text-main)' : 'var(--text-muted)' }}>
-                        {item.remarks || '—'}
-                      </td>
-                      {!teacherOnly && (
+                    return (
+                      <tr key={item.id}>
+                        <td>{idx + 1}</td>
+                        {!teacherOnly && (
+                          <td style={{ fontWeight: 600 }}>{teacherName}</td>
+                        )}
+                        <td>{item.date}</td>
                         <td>
-                          <button
-                            className="btn-icon"
-                            title="حذف"
-                            onClick={() => handleDelete(item.id, teacherName)}
-                            style={{ color: 'var(--danger)' }}
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            {item.schoolClass && (
+                              <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>
+                                {item.schoolClass.name}
+                              </span>
+                            )}
+                            {item.subject && (
+                              <span className="badge badge-secondary" style={{ fontSize: '0.72rem' }}>
+                                {item.subject.name}
+                              </span>
+                            )}
+                            {!item.schoolClass && !item.subject && <span style={{ color: 'var(--text-muted)' }}>عام</span>}
+                          </div>
                         </td>
-                      )}
-                    </tr>
-                  );
-                })}
+                        <td style={{ direction: 'ltr', fontSize: '0.85rem' }}>
+                          {item.startTime && item.endTime ? `${item.startTime} - ${item.endTime}` : (item.checkInTime || '—')}
+                        </td>
+                        <td>
+                          <span className="badge badge-secondary" style={{ fontWeight: 700 }}>
+                            {hours} س
+                          </span>
+                        </td>
+                        <td style={{ color: '#10b981', fontWeight: 700 }}>
+                          {earnings} د.ت
+                        </td>
+                        <td>
+                          <span className="badge badge-success">
+                            {item.status || 'حاضر'}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.remarks || '—'}</td>
+                        {!teacherOnly && (
+                          <td>
+                            <button
+                              className="btn-icon"
+                              title="حذف"
+                              onClick={() => handleDelete(item.id, teacherName)}
+                              style={{ color: 'var(--danger)' }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
-          {filtered.length === 0 && (
-            <div className="empty-state">
-              <UserCheck size={48} />
-              <p>لا توجد سجلات حضور مسجلة</p>
-            </div>
-          )}
         </div>
       )}
 
-      {/* ADMIN MANUAL RECORD MODAL */}
+      {/* Admin Record Modal */}
       {showAdminModal && (
-        <div className="modal-overlay" onClick={() => setShowAdminModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+        <div className="modal-overlay">
+          <div className="modal-card animate-scale-up" style={{ maxWidth: '500px' }}>
             <div className="modal-header">
-              <h2>رصد حضور معلم</h2>
+              <h3>رصد حضور وساعات معلم</h3>
               <button className="btn-icon" onClick={() => setShowAdminModal(false)}>
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleAdminSave} className="modal-form">
-              <div className="form-group">
-                <label>المعلم *</label>
-                <select
-                  className="input-field"
-                  value={adminForm.teacherId}
-                  onChange={(e) => setAdminForm({ ...adminForm, teacherId: e.target.value })}
-                  required
-                >
-                  <option value="">-- اختر المعلم --</option>
-                  {teachers.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.user?.firstName} {t.user?.lastName} ({t.user?.username})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>الحالة *</label>
-                <select
-                  className="input-field"
-                  value={adminForm.status}
-                  onChange={(e) => setAdminForm({ ...adminForm, status: e.target.value })}
-                >
-                  <option value="حاضر">حاضر (Present)</option>
-                  <option value="متأخر">متأخر (Late)</option>
-                  <option value="غائب">غائب (Absent)</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
+            <form onSubmit={handleAdminSave}>
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div className="form-group">
-                  <label>التاريخ *</label>
-                  <input
-                    type="date"
+                  <label>المعلم</label>
+                  <select
                     className="input-field"
-                    value={adminForm.date}
-                    onChange={(e) => setAdminForm({ ...adminForm, date: e.target.value })}
+                    value={adminForm.teacherId}
+                    onChange={(e) => setAdminForm({ ...adminForm, teacherId: e.target.value })}
                     required
-                  />
+                  >
+                    <option value="">-- اختر المعلم --</option>
+                    {teachers.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.user?.firstName} {t.user?.lastName} ({t.user?.username})
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label>الفصل الدراسي</label>
+                    <select
+                      className="input-field"
+                      value={adminForm.classId}
+                      onChange={(e) => setAdminForm({ ...adminForm, classId: e.target.value })}
+                    >
+                      <option value="">-- اختياري --</option>
+                      {classes.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name} {c.section ? `(${c.section})` : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>المادة الدراسية</label>
+                    <select
+                      className="input-field"
+                      value={adminForm.subjectId}
+                      onChange={(e) => setAdminForm({ ...adminForm, subjectId: e.target.value })}
+                    >
+                      <option value="">-- اختياري --</option>
+                      {subjects.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label>التاريخ</label>
+                    <input
+                      type="date"
+                      className="input-field"
+                      value={adminForm.date}
+                      onChange={(e) => setAdminForm({ ...adminForm, date: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>عدد الساعات</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0.5"
+                      max="12"
+                      className="input-field"
+                      value={adminForm.hoursCount}
+                      onChange={(e) => setAdminForm({ ...adminForm, hoursCount: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label>سعر الساعة (دينار تونسي TND)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      className="input-field"
+                      value={adminForm.hourlyRate}
+                      onChange={(e) => setAdminForm({ ...adminForm, hourlyRate: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>الحالة</label>
+                    <select
+                      className="input-field"
+                      value={adminForm.status}
+                      onChange={(e) => setAdminForm({ ...adminForm, status: e.target.value })}
+                    >
+                      <option value="حاضر">حاضر</option>
+                      <option value="متأخر">متأخر</option>
+                      <option value="غائب">غائب</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div className="form-group">
-                  <label>توقيت الدخول</label>
+                  <label>ملاحظات إضافية</label>
                   <input
                     type="text"
                     className="input-field"
-                    placeholder="08:00:00"
-                    value={adminForm.checkInTime}
-                    onChange={(e) => setAdminForm({ ...adminForm, checkInTime: e.target.value })}
+                    placeholder="ملاحظات..."
+                    value={adminForm.remarks}
+                    onChange={(e) => setAdminForm({ ...adminForm, remarks: e.target.value })}
                   />
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>ملاحظات</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="ملاحظات أو مبرر الغياب / التأخير..."
-                  value={adminForm.remarks}
-                  onChange={(e) => setAdminForm({ ...adminForm, remarks: e.target.value })}
-                />
-              </div>
-
-              <div className="modal-actions" style={{ marginTop: '16px' }}>
-                <button type="submit" className="btn btn-primary" disabled={adminSaving}>
-                  {adminSaving ? 'جاري الحفظ...' : 'حفظ السجل'}
-                </button>
+              <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setShowAdminModal(false)}>
                   إلغاء
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={adminSaving}>
+                  {adminSaving ? 'جارٍ الحفظ...' : 'حفظ السجل والساعات'}
                 </button>
               </div>
             </form>

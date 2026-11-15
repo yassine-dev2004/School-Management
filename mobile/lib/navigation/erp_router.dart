@@ -4,6 +4,7 @@ import '../screens/attendance_screen.dart';
 import '../screens/children_screen.dart';
 import '../screens/classes_screen.dart';
 import '../screens/dashboard_screen.dart';
+import '../screens/documents_screen.dart';
 import '../screens/grades_screen.dart';
 import '../screens/homework_screen.dart';
 import '../screens/login_screen.dart';
@@ -37,6 +38,8 @@ class ErpRouter {
         return const HomeworkScreen();
       case ErpRoute.announcements:
         return const AnnouncementsScreen();
+      case ErpRoute.documents:
+        return const DocumentsScreen();
       case ErpRoute.children:
         return const ChildrenScreen();
       case ErpRoute.settings:

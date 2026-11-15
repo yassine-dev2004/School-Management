@@ -104,6 +104,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _openTeacherCheckInModal() async {
     String status = 'PRESENT';
+    final hoursCtrl = TextEditingController(text: '2.0');
+    final rateCtrl = TextEditingController(text: '25.0');
+    final startCtrl = TextEditingController(text: '08:00');
+    final endCtrl = TextEditingController(text: '10:00');
     final remarksCtrl = TextEditingController();
     bool saving = false;
 
@@ -122,72 +126,120 @@ class _DashboardScreenState extends State<DashboardScreen> {
             18,
             MediaQuery.of(ctx).viewInsets.bottom + 18,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'تسجيل حضور المعلم (Pointage Enseignant)',
-                      style: TextStyle(
-                          fontSize: 16.5, fontWeight: FontWeight.w900),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'تسجيل حضور الحصة بالساعة (Pointage)',
+                        style: TextStyle(
+                            fontSize: 16.5, fontWeight: FontWeight.w900),
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const Divider(),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: status,
-                decoration: const InputDecoration(labelText: 'حالة الحضور *'),
-                items: const [
-                  DropdownMenuItem(
-                      value: 'PRESENT', child: Text('حاضر (Présent)')),
-                  DropdownMenuItem(
-                      value: 'LATE', child: Text('متأخر (En retard)')),
-                  DropdownMenuItem(
-                      value: 'ABSENT', child: Text('غائب (Absent)')),
-                ],
-                onChanged: (v) => setModalState(() => status = v ?? 'PRESENT'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: remarksCtrl,
-                decoration:
-                    const InputDecoration(labelText: 'ملاحظة أو تبرير (اختياري)'),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: saving
-                    ? null
-                    : () async {
-                        setModalState(() => saving = true);
-                        final res = await ApiService.teacherCheckIn(
-                            status, remarksCtrl.text.trim());
-                        if (!ctx.mounted) return;
-                        setModalState(() => saving = false);
-                        if (res.success) {
-                          Navigator.pop(ctx);
-                          if (mounted) {
-                            showErpToast(
-                                context, 'تم تسجيل حضورك بنجاح لهذا اليوم');
-                            _loadData();
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: status,
+                  decoration: const InputDecoration(labelText: 'حالة الحضور *'),
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'PRESENT', child: Text('حاضر (Présent)')),
+                    DropdownMenuItem(
+                        value: 'LATE', child: Text('متأخر (En retard)')),
+                    DropdownMenuItem(
+                        value: 'ABSENT', child: Text('غائب (Absent)')),
+                  ],
+                  onChanged: (v) => setModalState(() => status = v ?? 'PRESENT'),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: hoursCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: const InputDecoration(labelText: 'عدد الساعات (ساعة) *'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: rateCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: const InputDecoration(labelText: 'سعر الساعة (د.ت)'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: startCtrl,
+                        decoration: const InputDecoration(labelText: 'بداية الحصة (HH:mm)'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: endCtrl,
+                        decoration: const InputDecoration(labelText: 'نهاية الحصة (HH:mm)'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: remarksCtrl,
+                  decoration:
+                      const InputDecoration(labelText: 'ملاحظة أو تبرير أو تفاصيل الحصة'),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          setModalState(() => saving = true);
+                          final hours = double.tryParse(hoursCtrl.text.trim()) ?? 2.0;
+                          final rate = double.tryParse(rateCtrl.text.trim()) ?? 25.0;
+                          final res = await ApiService.teacherCheckInDetailed(
+                            status: status,
+                            remarks: remarksCtrl.text.trim(),
+                            hoursCount: hours,
+                            hourlyRate: rate,
+                            startTime: startCtrl.text.trim(),
+                            endTime: endCtrl.text.trim(),
+                          );
+                          if (!ctx.mounted) return;
+                          setModalState(() => saving = false);
+                          if (res.success) {
+                            Navigator.pop(ctx);
+                            if (mounted) {
+                              showErpToast(
+                                  context, 'تم تسجيل حضورك بالساعة بنجاح ($hours س)');
+                              _loadData();
+                            }
+                          } else {
+                            if (mounted) {
+                              showErpToast(context, res.message, isError: true);
+                            }
                           }
-                        } else {
-                          if (mounted) {
-                            showErpToast(context, res.message, isError: true);
-                          }
-                        }
-                      },
-                child: Text(saving ? 'جاري التسجيل...' : 'تأكيد الحضور'),
-              ),
-            ],
+                        },
+                  child: Text(saving ? 'جاري التسجيل...' : 'تأكيد الحضور بالساعة'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

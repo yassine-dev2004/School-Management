@@ -132,6 +132,11 @@ class _ErpShellState extends State<ErpShell> {
               icon: Icons.campaign_outlined,
               label: 'الإعلانات',
             ),
+            _MenuItem(
+              route: ErpRoute.documents,
+              icon: Icons.folder_shared_outlined,
+              label: 'الوثائق والمستندات',
+            ),
           ],
         ),
         const _MenuSection(
@@ -308,7 +313,7 @@ class _ErpShellState extends State<ErpShell> {
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'مدرستي ERP',
+                      'مدرسة ابن خلدون',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -423,7 +428,7 @@ class _ErpShellState extends State<ErpShell> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'مدرستي ERP',
+                            'مدرسة ابن خلدون',
                             style: TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.w900,
@@ -431,7 +436,7 @@ class _ErpShellState extends State<ErpShell> {
                             ),
                           ),
                           Text(
-                            'نظام إدارة المدرسة',
+                            'Madrasat Ibn Khaldun',
                             style: TextStyle(
                               fontSize: 11.5,
                               color: ErpColors.textMuted,

@@ -20,6 +20,12 @@ public class TeacherAttendanceService {
     @Autowired
     private TeacherRepository teacherRepository;
 
+    @Autowired
+    private com.school.management.repository.SubjectRepository subjectRepository;
+
+    @Autowired
+    private com.school.management.repository.SchoolClassRepository schoolClassRepository;
+
     private static final TimeZone TUNIS_TZ = TimeZone.getTimeZone("Africa/Tunis");
 
     public Date parseDateOnly(Date date) {
@@ -43,7 +49,9 @@ public class TeacherAttendanceService {
     }
 
     @Transactional
-    public TeacherAttendance recordSelfCheckIn(Long teacherId, Date requestedDate, String status, String remarks) {
+    public TeacherAttendance recordSelfCheckIn(Long teacherId, Date requestedDate, String status, String remarks,
+                                               Double hoursCount, String startTime, String endTime,
+                                               Long subjectId, Long classId, Double hourlyRate) {
         Teacher teacher = teacherRepository.findById(teacherId)
                 .orElseThrow(() -> new RuntimeException("لم يتم العثور على ملف المعلم / Teacher record not found"));
 
@@ -71,7 +79,30 @@ public class TeacherAttendanceService {
             att.setRemarks(remarks != null ? remarks.trim() : "تسجيل ذاتي بواسطة المعلم");
         }
 
+        if (hoursCount != null && hoursCount > 0) {
+            att.setHoursCount(hoursCount);
+        }
+        if (startTime != null && !startTime.trim().isEmpty()) {
+            att.setStartTime(startTime.trim());
+        }
+        if (endTime != null && !endTime.trim().isEmpty()) {
+            att.setEndTime(endTime.trim());
+        }
+        if (hourlyRate != null && hourlyRate > 0) {
+            att.setHourlyRate(hourlyRate);
+        }
+        if (subjectId != null) {
+            subjectRepository.findById(subjectId).ifPresent(att::setSubject);
+        }
+        if (classId != null) {
+            schoolClassRepository.findById(classId).ifPresent(att::setSchoolClass);
+        }
+
         return teacherAttendanceRepository.save(att);
+    }
+
+    public TeacherAttendance recordSelfCheckIn(Long teacherId, Date requestedDate, String status, String remarks) {
+        return recordSelfCheckIn(teacherId, requestedDate, status, remarks, null, null, null, null, null, null);
     }
 
     public Optional<TeacherAttendance> getTeacherTodayAttendance(Long teacherId) {

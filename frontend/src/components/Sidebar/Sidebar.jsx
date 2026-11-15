@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen,
   ClipboardList, FileText, Megaphone, Settings, LogOut,
-  School, UserCheck, Baby, X
+  School, UserCheck, Baby, X, CreditCard, BookCheck, Files
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -25,19 +25,22 @@ const Sidebar = ({ collapsed, mobileOpen, onCloseMobile }) => {
       ],
     },
     {
-      title: 'الإدارة الأكاديمية',
+      title: 'الإدارة الأكاديمية والمالية',
       items: [
         { to: '/admin/students', icon: Users, label: 'إدارة الطلاب' },
+        { to: '/admin/payments', icon: CreditCard, label: 'أقساط ورسوم الطلاب' },
         { to: '/admin/teachers', icon: GraduationCap, label: 'إدارة المعلمين' },
-        { to: '/admin/teacher-attendance', icon: UserCheck, label: 'حضور المعلمين' },
+        { to: '/admin/teacher-attendance', icon: UserCheck, label: 'حضور المعلمين بالساعة' },
         { to: '/admin/parents', icon: Baby, label: 'أولياء الأمور' },
-        { to: '/admin/classes', icon: School, label: 'الفصول الدراسية' },
+        { to: '/admin/classes', icon: School, label: 'الفصول والرسوم السنوية' },
         { to: '/admin/subjects', icon: BookOpen, label: 'المواد الدراسية' },
       ],
     },
     {
-      title: 'المتابعة والتقييم',
+      title: 'المتابعة والتقييم والتوثيق',
       items: [
+        { to: '/admin/logbook', icon: BookCheck, label: 'كراس الدروس اليومي' },
+        { to: '/admin/documents', icon: Files, label: 'الوثائق والمستندات' },
         { to: '/admin/attendance', icon: UserCheck, label: 'الحضور والغياب' },
         { to: '/admin/grades', icon: ClipboardList, label: 'الدرجات' },
         { to: '/admin/homework', icon: FileText, label: 'الواجبات' },
@@ -57,7 +60,7 @@ const Sidebar = ({ collapsed, mobileOpen, onCloseMobile }) => {
       title: 'بوابة المعلم',
       items: [
         { to: '/admin/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
-        { to: '/admin/teacher-attendance', icon: UserCheck, label: 'تسجيل حضوري' },
+        { to: '/admin/teacher-attendance', icon: UserCheck, label: 'تسجيل حضوري بالساعة' },
       ],
     },
     {
@@ -69,8 +72,10 @@ const Sidebar = ({ collapsed, mobileOpen, onCloseMobile }) => {
       ],
     },
     {
-      title: 'التقييم والمتابعة',
+      title: 'التقييم والمتابعة والتوثيق',
       items: [
+        { to: '/admin/logbook', icon: BookCheck, label: 'كراس الدروس اليومي' },
+        { to: '/admin/documents', icon: Files, label: 'رفع وثائق / أوراق الفروض' },
         { to: '/admin/attendance', icon: UserCheck, label: 'الحضور والغياب' },
         { to: '/admin/grades', icon: ClipboardList, label: 'رصد الدرجات' },
         { to: '/admin/homework', icon: FileText, label: 'الواجبات' },
@@ -84,7 +89,7 @@ const Sidebar = ({ collapsed, mobileOpen, onCloseMobile }) => {
       title: 'بوابة ولي الأمر',
       items: [
         { to: '/parent/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
-        { to: '/parent/children', icon: Baby, label: 'أبنائي' },
+        { to: '/parent/children', icon: Baby, label: 'أبنائي (الرسوم والدروس)' },
         { to: '/parent/announcements', icon: Megaphone, label: 'الإعلانات' },
       ],
     },
@@ -106,8 +111,8 @@ const Sidebar = ({ collapsed, mobileOpen, onCloseMobile }) => {
           </div>
           {(!collapsed || mobileOpen) && (
             <div className="brand-copy">
-              <span className="brand-text">مدرستي ERP</span>
-              <span className="brand-sub">نظام إدارة المدرسة</span>
+              <span className="brand-text">مدرسة ابن خلدون</span>
+              <span className="brand-sub">Madrasat Ibn Khaldun</span>
             </div>
           )}
         </div>

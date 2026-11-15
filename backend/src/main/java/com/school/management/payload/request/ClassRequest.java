@@ -10,6 +10,7 @@ public class ClassRequest {
     private String section;
     private Long teacherId;
     private Set<Long> teacherIds;
+    private Double annualFee;
 
     public ClassRequest() {}
 
@@ -56,5 +57,13 @@ public class ClassRequest {
 
     public void setTeacherIds(Set<Long> teacherIds) {
         this.teacherIds = teacherIds;
+    }
+
+    public Double getAnnualFee() {
+        return annualFee;
+    }
+
+    public void setAnnualFee(Double annualFee) {
+        this.annualFee = annualFee;
     }
 }

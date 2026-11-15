@@ -16,7 +16,7 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
   List<dynamic> _children = [];
   dynamic _selectedChild;
   List<dynamic> _classHomework = [];
-  int _activeTab = 0; // 0 = الدرجات, 1 = الحضور, 2 = الواجبات
+  int _activeTab = 0; // 0 = الدروس اليومية, 1 = الرسوم والأقساط, 2 = الدرجات, 3 = الحضور, 4 = الواجبات
   bool _loading = true;
   bool _loadingHomework = false;
 
@@ -89,9 +89,9 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
                 children: [
                   const ErpPageHeader(
-                    title: 'أبنائي والنتائج',
+                    title: 'أبنائي والدروس والرسوم',
                     subtitle:
-                        'متابعة الدرجات وسجلات الحضور والواجبات المدرسية للأبناء',
+                        'متابعة ما درسه ابنك اليوم، رسوم الدراسة المتبقية، والدرجات في مدرسة ابن خلدون',
                   ),
                   if (_children.isEmpty)
                     const ErpEmptyState(
@@ -109,10 +109,10 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                       final className = sc != null
                           ? '${sc['name'] ?? ''} - ${sc['section'] ?? ''}'
                           : 'غير محدد';
-                      final grades =
-                          (child['grades'] as List<dynamic>?) ?? [];
-                      final att =
-                          (child['attendance'] as List<dynamic>?) ?? [];
+                      final tuition = child['tuitionSummary'] as Map<String, dynamic>?;
+                      final missing = tuition?['missingAmount'] ?? 0;
+                      final isPaid = tuition?['yearStatus'] == 'PAID';
+                      final todayLessons = (child['todayLessons'] as List<dynamic>?) ?? [];
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
@@ -175,15 +175,17 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                                 runSpacing: 6,
                                 children: [
                                   ErpBadge(
+                                    label: isPaid ? 'الرسوم خالصة 🎉' : 'المتبقي: $missing د.ت',
+                                    tone: isPaid ? ErpBadgeTone.success : ErpBadgeTone.danger,
+                                  ),
+                                  ErpBadge(
+                                    label: '${todayLessons.length} دروس اليوم',
+                                    tone: ErpBadgeTone.info,
+                                  ),
+                                  ErpBadge(
                                     label: child['status']?.toString() ?? 'نشط',
                                     tone: ErpBadgeTone.success,
                                   ),
-                                  ErpBadge(
-                                      label: '${grades.length} درجة',
-                                      tone: ErpBadgeTone.info),
-                                  ErpBadge(
-                                      label: '${att.length} سجل حضور',
-                                      tone: ErpBadgeTone.neutral),
                                 ],
                               ),
                             ],
@@ -198,31 +200,34 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                         padding: EdgeInsets.zero,
                         child: Column(
                           children: [
-                            // Tabs row (Grades / Attendance / Homework)
-                            Container(
-                              decoration: const BoxDecoration(
-                                border: Border(
-                                    bottom:
-                                        BorderSide(color: ErpColors.border)),
-                              ),
-                              child: Row(
-                                children: [
-                                  _tabButton(0, Icons.assignment_outlined,
-                                      'الدرجات'),
-                                  _tabButton(1, Icons.fact_check_outlined,
-                                      'الحضور'),
-                                  _tabButton(2, Icons.description_outlined,
-                                      'الواجبات'),
-                                ],
+                            // Tabs row
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  border: Border(
+                                      bottom:
+                                          BorderSide(color: ErpColors.border)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    _tabButton(0, Icons.menu_book_outlined,
+                                        'ما درسه اليوم'),
+                                    _tabButton(1, Icons.credit_card_outlined,
+                                        'الرسوم والأقساط'),
+                                    _tabButton(2, Icons.assignment_outlined,
+                                        'الدرجات'),
+                                    _tabButton(3, Icons.fact_check_outlined,
+                                        'الحضور'),
+                                    _tabButton(4, Icons.description_outlined,
+                                        'الواجبات'),
+                                  ],
+                                ),
                               ),
                             ),
                             Padding(
                               padding: const EdgeInsets.all(14),
-                              child: _activeTab == 0
-                                  ? _buildGradesTab(_selectedChild)
-                                  : _activeTab == 1
-                                      ? _buildAttendanceTab(_selectedChild)
-                                      : _buildHomeworkTab(),
+                              child: _buildCurrentTabContent(),
                             ),
                           ],
                         ),
@@ -235,40 +240,279 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
     );
   }
 
+  Widget _buildCurrentTabContent() {
+    switch (_activeTab) {
+      case 0:
+        return _buildLessonsTab(_selectedChild);
+      case 1:
+        return _buildTuitionTab(_selectedChild);
+      case 2:
+        return _buildGradesTab(_selectedChild);
+      case 3:
+        return _buildAttendanceTab(_selectedChild);
+      case 4:
+        return _buildHomeworkTab();
+      default:
+        return _buildLessonsTab(_selectedChild);
+    }
+  }
+
   Widget _tabButton(int index, IconData icon, String label) {
     final active = _activeTab == index;
-    return Expanded(
-      child: InkWell(
-        onTap: () => setState(() => _activeTab = index),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 13),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: active ? ErpColors.primary : Colors.transparent,
-                width: 2.2,
-              ),
+    return InkWell(
+      onTap: () => setState(() => _activeTab = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: active ? ErpColors.primary : Colors.transparent,
+              width: 2.2,
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon,
-                  size: 16,
-                  color: active ? ErpColors.primary : ErpColors.textMuted),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-                  color: active ? ErpColors.primary : ErpColors.textMuted,
-                ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                size: 16,
+                color: active ? ErpColors.primary : ErpColors.textMuted),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                color: active ? ErpColors.primary : ErpColors.textMuted,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLessonsTab(dynamic child) {
+    final recentLessons = (child['recentLessons'] as List<dynamic>?) ?? [];
+    if (recentLessons.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(Icons.menu_book_outlined, size: 40, color: ErpColors.textMuted),
+              SizedBox(height: 8),
+              Text('لم يتم تسجيل دروس حديثة لهذا الفصل بعد',
+                  style: TextStyle(color: ErpColors.textMuted)),
             ],
           ),
         ),
-      ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(bottom: 12),
+          child: Text(
+            'سجل ما تم تدريسه اليوم وفي الأيام الأخيرة (Cahier de Texte):',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          ),
+        ),
+        ...recentLessons.map((l) {
+          final title = l['title']?.toString() ?? 'درس';
+          final subName = l['subject']?['name']?.toString() ?? '';
+          final date = l['logDate']?.toString() ?? '';
+          final teacherName = l['teacherName']?.toString() ?? '';
+          final summary = l['summary']?.toString() ?? '';
+          final homework = l['homeworkAssigned']?.toString() ?? '';
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: ErpColors.bgBase,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: ErpColors.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                            fontSize: 14.5, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    if (subName.isNotEmpty)
+                      ErpBadge(label: subName, tone: ErpBadgeTone.info),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'التاريخ: $date ${teacherName.isNotEmpty ? "• الأستاذ: $teacherName" : ""}',
+                  style: const TextStyle(fontSize: 11.5, color: ErpColors.textMuted),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: ErpColors.surface,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    summary,
+                    style: const TextStyle(fontSize: 12.5, height: 1.4),
+                  ),
+                ),
+                if (homework.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      'الواجب المنزلي: $homework',
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildTuitionTab(dynamic child) {
+    final tuition = child['tuitionSummary'] as Map<String, dynamic>?;
+    if (tuition == null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: Text('بيانات الرسوم غير متوفرة',
+              style: TextStyle(color: ErpColors.textMuted)),
+        ),
+      );
+    }
+
+    final fee = tuition['annualFee'] ?? 1200;
+    final paid = tuition['totalPaid'] ?? 0;
+    final missing = tuition['missingAmount'] ?? 0;
+    final status = tuition['yearStatus'] ?? 'UNPAID';
+    final breakdown = (tuition['monthlyBreakdown'] as List<dynamic>?) ?? [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Summary grid
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: ErpColors.bgBase,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _miniMetric('الرسوم السنوية', '$fee د.ت', ErpColors.textMain),
+              _miniMetric('المسدد', '$paid د.ت', ErpColors.success),
+              _miniMetric('المتبقي للدفع', '$missing د.ت', missing > 0 ? ErpColors.danger : ErpColors.success),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'حالة السداد العامة:',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            ),
+            ErpBadge(
+              label: status == 'PAID'
+                  ? 'خالص بالكامل 🎉'
+                  : status == 'PARTIAL'
+                      ? 'دفع جزئي ⏳'
+                      : 'غير خالص ⚠️',
+              tone: status == 'PAID'
+                  ? ErpBadgeTone.success
+                  : status == 'PARTIAL'
+                      ? ErpBadgeTone.warning
+                      : ErpBadgeTone.danger,
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        const Text(
+          'جدول الأقساط الشهرية (من سبتمبر إلى جوان):',
+          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 8),
+        ...breakdown.map((m) {
+          final isPaid = m['isPaid'] == true;
+          final isPartial = m['isPartial'] == true;
+          final monthName = m['monthName'] ?? m['month'] ?? '';
+          final paidAmt = m['paidAmount'] ?? 0;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: ErpColors.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: ErpColors.border),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  monthName.toString(),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      '$paidAmt د.ت',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: paidAmt > 0 ? ErpColors.success : ErpColors.textMuted,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ErpBadge(
+                      label: isPaid
+                          ? 'خالص'
+                          : isPartial
+                              ? 'جزئي'
+                              : 'غير مسدد',
+                      tone: isPaid
+                          ? ErpBadgeTone.success
+                          : isPartial
+                              ? ErpBadgeTone.warning
+                              : ErpBadgeTone.danger,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
     );
   }
 
@@ -355,8 +599,9 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                   ),
                 ),
                 ErpBadge(
-                    label: '$score / $maxScore',
-                    tone: _scoreTone(score, maxScore)),
+                  label: '$score / $maxScore',
+                  tone: _scoreTone(score, maxScore),
+                ),
               ],
             ),
           );
@@ -377,15 +622,13 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
       );
     }
 
-    final present = att
+    final presentCount = att
         .where((a) => a['status'] == 'Present' || a['status'] == 'حاضر')
         .length;
-    final absent = att
-        .where((a) => a['status'] == 'Absent' || a['status'] == 'غائب')
-        .length;
-    final late = att
-        .where((a) => a['status'] == 'Late' || a['status'] == 'متأخر')
-        .length;
+    final absentCount =
+        att.where((a) => a['status'] == 'Absent' || a['status'] == 'غائب').length;
+    final lateCount =
+        att.where((a) => a['status'] == 'Late' || a['status'] == 'متأخر').length;
 
     return Column(
       children: [
@@ -399,26 +642,24 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _miniMetric('حاضر', '$present', ErpColors.success),
-              _miniMetric('غائب', '$absent', ErpColors.danger),
-              _miniMetric('متأخر', '$late', ErpColors.warning),
+              _miniMetric('إجمالي', '${att.length}', ErpColors.textMain),
+              _miniMetric('حاضر', '$presentCount', ErpColors.success),
+              _miniMetric('غائب', '$absentCount', ErpColors.danger),
+              _miniMetric('متأخر', '$lateCount', ErpColors.warning),
             ],
           ),
         ),
         ...att.map((a) {
-          final status = a['status']?.toString() ?? '—';
+          final status = (a['status'] ?? 'حاضر').toString();
           return Container(
             margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: ErpColors.border),
             ),
             child: Row(
               children: [
-                const Icon(Icons.calendar_today_outlined,
-                    size: 16, color: ErpColors.textMuted),
-                const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -428,17 +669,13 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                         style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 13.5),
                       ),
-                      if ((a['remarks'] ?? '').toString().trim().isNotEmpty) ...[
-                        const SizedBox(height: 2),
+                      if (a['remarks'] != null &&
+                          a['remarks'].toString().isNotEmpty)
                         Text(
-                          'ملاحظة: ${a['remarks']}',
+                          a['remarks'].toString(),
                           style: const TextStyle(
-                            fontSize: 11.5,
-                            color: ErpColors.textSecondary,
-                            fontStyle: FontStyle.italic,
-                          ),
+                              fontSize: 12, color: ErpColors.textMuted),
                         ),
-                      ],
                     ],
                   ),
                 ),
@@ -524,7 +761,7 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
         Text(
           value,
           style: TextStyle(
-              fontSize: 16.5, fontWeight: FontWeight.w900, color: color),
+              fontSize: 15.5, fontWeight: FontWeight.w900, color: color),
         ),
       ],
     );

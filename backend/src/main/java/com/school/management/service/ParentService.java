@@ -32,6 +32,12 @@ public class ParentService {
     private AttendanceRepository attendanceRepository;
 
     @Autowired
+    private StudentPaymentService studentPaymentService;
+
+    @Autowired
+    private DailyLessonLogRepository dailyLessonLogRepository;
+
+    @Autowired
     private PasswordEncoder encoder;
 
     public List<Parent> getAllParents() {
@@ -145,6 +151,24 @@ public class ParentService {
                 }
             }
             childData.put("attendance", attendanceData);
+
+            // Tuition summary (fees, paid, remaining balance)
+            try {
+                childData.put("tuitionSummary", studentPaymentService.getStudentTuitionSummary(child.getId(), "2026-2027"));
+            } catch (Exception ignored) {}
+
+            // Lessons studied / Cahier de texte for this child's class
+            if (child.getSchoolClass() != null && child.getSchoolClass().getId() != null) {
+                Long classId = child.getSchoolClass().getId();
+                try {
+                    childData.put("recentLessons", dailyLessonLogRepository.findTop20BySchoolClassIdOrderByDateDesc(classId));
+                    Date today = dateFmt.parse(dateFmt.format(new Date()));
+                    childData.put("todayLessons", dailyLessonLogRepository.findBySchoolClassIdAndDateOrderByPeriodAsc(classId, today));
+                } catch (Exception ignored) {}
+            } else {
+                childData.put("recentLessons", Collections.emptyList());
+                childData.put("todayLessons", Collections.emptyList());
+            }
 
             childrenData.add(childData);
         }

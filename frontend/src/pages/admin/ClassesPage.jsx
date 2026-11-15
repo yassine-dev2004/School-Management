@@ -13,7 +13,7 @@ const ClassesPage = () => {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', section: '', teacherId: '', teacherIds: [] });
+  const [form, setForm] = useState({ name: '', section: '', annualFee: 1200, teacherId: '', teacherIds: [] });
 
   useEffect(() => {
     loadItems();
@@ -70,6 +70,7 @@ const ClassesPage = () => {
       setForm({
         name: cls.name || '',
         section: cls.section || '',
+        annualFee: cls.annualFee != null ? cls.annualFee : 1200,
         teacherId: cls.teacher?.id ? String(cls.teacher.id) : (initialIds[0] ? String(initialIds[0]) : ''),
         teacherIds: initialIds,
       });
@@ -78,6 +79,7 @@ const ClassesPage = () => {
       setForm({
         name: '',
         section: '',
+        annualFee: 1200,
         teacherId: '',
         teacherIds: [],
       });
@@ -120,6 +122,7 @@ const ClassesPage = () => {
       const payload = {
         name: form.name.trim(),
         section: form.section.trim(),
+        annualFee: form.annualFee !== '' ? Number(form.annualFee) : 1200,
         teacherId: form.teacherId ? Number(form.teacherId) : null,
         teacherIds: form.teacherIds.map(Number),
       };
@@ -229,6 +232,7 @@ const ClassesPage = () => {
                   <th>#</th>
                   <th>اسم الفصل</th>
                   <th>الشعبة</th>
+                  <th>الرسوم السنوية</th>
                   <th>رائد الفصل (المعلم المسؤول)</th>
                   <th>عدد الطلاب المقيدين</th>
                   <th>إجراءات</th>
@@ -242,6 +246,7 @@ const ClassesPage = () => {
                     : (leadTeacher ? [leadTeacher] : []);
                   const leadTeacherName = leadTeacher?.user ? `${leadTeacher.user.firstName} ${leadTeacher.user.lastName}` : null;
                   const otherTeachers = allTeachers.filter((t) => t.id !== leadTeacher?.id);
+                  const fee = item.annualFee != null ? item.annualFee : 1200;
 
                   return (
                     <tr key={item.id}>
@@ -251,6 +256,11 @@ const ClassesPage = () => {
                       </td>
                       <td>
                         <span className="badge badge-primary">{item.section || 'عام'}</span>
+                      </td>
+                      <td>
+                        <span className="badge badge-success" style={{ fontWeight: 700 }}>
+                          {fee.toLocaleString()} د.ت / سنوياً
+                        </span>
                       </td>
                       <td>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -334,6 +344,23 @@ const ClassesPage = () => {
                   value={form.section}
                   onChange={(e) => setForm({ ...form, section: e.target.value })}
                 />
+              </div>
+
+              <div className="form-group">
+                <label>الرسوم الدراسية السنوية الإجمالية (دينار تونسي TND)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  className="input-field"
+                  placeholder="مثال: 1200"
+                  value={form.annualFee}
+                  onChange={(e) => setForm({ ...form, annualFee: e.target.value })}
+                  required
+                />
+                <small style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '4px', display: 'block' }}>
+                  تعتمد هذه الرسوم كمرجع لحساب الأقساط والمبالغ المتبقية لكل طالب مسجل بهذا الفصل.
+                </small>
               </div>
 
               <div className="form-group">
