@@ -487,6 +487,14 @@ class ApiService {
     return post('/payments', payload);
   }
 
+  static Future<ApiResult<dynamic>> quickSettleTuition(int studentId, {String? academicYear, String status = 'PAID'}) async {
+    final year = academicYear ?? '2025-2026';
+    return post('/payments/student/$studentId/quick-status', {
+      'academicYear': year,
+      'status': status,
+    });
+  }
+
   // Daily Lesson Logbook API
   static Future<List<dynamic>> getDailyLessonLogs({int? classId, String? date}) async {
     var url = '/logbook?';
@@ -497,6 +505,26 @@ class ApiService {
 
   static Future<ApiResult<dynamic>> createDailyLessonLog(Map<String, dynamic> payload) async {
     return post('/logbook', payload);
+  }
+
+  static Future<ApiResult<dynamic>> deleteDailyLessonLog(int id) async {
+    return delete('/logbook/$id');
+  }
+
+  // Teacher Attendance Admin & History API
+  static Future<List<dynamic>> getAllTeacherAttendances({int? teacherId, String? date}) async {
+    var url = '/teacher-attendance?';
+    if (teacherId != null) url += 'teacherId=$teacherId&';
+    if (date != null && date.isNotEmpty) url += 'date=$date&';
+    return getList(url);
+  }
+
+  static Future<ApiResult<dynamic>> recordTeacherAttendanceAdmin(Map<String, dynamic> payload) async {
+    return post('/teacher-attendance', payload);
+  }
+
+  static Future<ApiResult<dynamic>> deleteTeacherAttendance(int id) async {
+    return delete('/teacher-attendance/$id');
   }
 
   // Documents Repository API

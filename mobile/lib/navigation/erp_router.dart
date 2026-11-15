@@ -3,15 +3,18 @@ import '../screens/announcements_screen.dart';
 import '../screens/attendance_screen.dart';
 import '../screens/children_screen.dart';
 import '../screens/classes_screen.dart';
+import '../screens/daily_logbook_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/documents_screen.dart';
 import '../screens/grades_screen.dart';
 import '../screens/homework_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/parents_screen.dart';
+import '../screens/payments_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/students_screen.dart';
 import '../screens/subjects_screen.dart';
+import '../screens/teacher_attendance_screen.dart';
 import '../screens/teachers_screen.dart';
 import 'erp_route.dart';
 
@@ -30,6 +33,12 @@ class ErpRouter {
         return const ClassesScreen();
       case ErpRoute.subjects:
         return const SubjectsScreen();
+      case ErpRoute.payments:
+        return const PaymentsScreen();
+      case ErpRoute.teacherAttendance:
+        return const TeacherAttendanceScreen();
+      case ErpRoute.dailyLogbook:
+        return const DailyLogbookScreen();
       case ErpRoute.attendance:
         return const AttendanceScreen();
       case ErpRoute.grades:

@@ -429,12 +429,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 _quickTile(
                     Icons.people_outline, 'الطلاب', ErpRoute.students),
+                _quickTile(Icons.account_balance_wallet_outlined, 'أقساط الطلاب',
+                    ErpRoute.payments),
                 if (_isAdmin)
                   _quickTile(
                       Icons.school_outlined, 'المعلمون', ErpRoute.teachers),
+                _quickTile(Icons.more_time_outlined, 'حضور المعلمين',
+                    ErpRoute.teacherAttendance),
+                _quickTile(Icons.auto_stories_outlined, 'كراس الدروس',
+                    ErpRoute.dailyLogbook),
                 _quickTile(Icons.family_restroom_outlined, 'أولياء الأمور',
                     ErpRoute.parents),
-                _quickTile(Icons.meeting_room_outlined, 'الفصول',
+                _quickTile(Icons.meeting_room_outlined, 'الفصول والرسوم',
                     ErpRoute.classes),
                 _quickTile(
                     Icons.menu_book_outlined, 'المواد', ErpRoute.subjects),
@@ -444,6 +450,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Icons.assignment_outlined, 'الدرجات', ErpRoute.grades),
                 _quickTile(Icons.description_outlined, 'الواجبات',
                     ErpRoute.homework),
+                _quickTile(Icons.folder_shared_outlined, 'المستندات',
+                    ErpRoute.documents),
                 _quickTile(Icons.campaign_outlined, 'الإعلانات',
                     ErpRoute.announcements),
                 _quickTile(

@@ -79,12 +79,17 @@ class _ErpShellState extends State<ErpShell> {
           ],
         ),
         _MenuSection(
-          title: 'الإدارة الأكاديمية',
+          title: 'الإدارة الأكاديمية والمالية',
           items: [
             const _MenuItem(
               route: ErpRoute.students,
               icon: Icons.people_outline,
               label: 'إدارة الطلاب',
+            ),
+            const _MenuItem(
+              route: ErpRoute.payments,
+              icon: Icons.account_balance_wallet_outlined,
+              label: 'أقساط ورسوم الطلاب',
             ),
             if (_isAdmin)
               const _MenuItem(
@@ -93,6 +98,11 @@ class _ErpShellState extends State<ErpShell> {
                 label: 'إدارة المعلمين',
               ),
             const _MenuItem(
+              route: ErpRoute.teacherAttendance,
+              icon: Icons.more_time_outlined,
+              label: 'حضور المعلمين بالساعة',
+            ),
+            const _MenuItem(
               route: ErpRoute.parents,
               icon: Icons.family_restroom_outlined,
               label: 'أولياء الأمور',
@@ -100,7 +110,7 @@ class _ErpShellState extends State<ErpShell> {
             const _MenuItem(
               route: ErpRoute.classes,
               icon: Icons.meeting_room_outlined,
-              label: 'الفصول الدراسية',
+              label: 'الفصول والرسوم السنوية',
             ),
             const _MenuItem(
               route: ErpRoute.subjects,
@@ -110,8 +120,18 @@ class _ErpShellState extends State<ErpShell> {
           ],
         ),
         const _MenuSection(
-          title: 'المتابعة والتقييم',
+          title: 'المتابعة والتقييم والتوثيق',
           items: [
+            _MenuItem(
+              route: ErpRoute.dailyLogbook,
+              icon: Icons.auto_stories_outlined,
+              label: 'كراس الدروس اليومي',
+            ),
+            _MenuItem(
+              route: ErpRoute.documents,
+              icon: Icons.folder_shared_outlined,
+              label: 'الوثائق والمستندات',
+            ),
             _MenuItem(
               route: ErpRoute.attendance,
               icon: Icons.fact_check_outlined,
@@ -120,22 +140,17 @@ class _ErpShellState extends State<ErpShell> {
             _MenuItem(
               route: ErpRoute.grades,
               icon: Icons.assignment_outlined,
-              label: 'الدرجات',
+              label: 'الدرجات والتقييمات',
             ),
             _MenuItem(
               route: ErpRoute.homework,
               icon: Icons.description_outlined,
-              label: 'الواجبات',
+              label: 'الواجبات المدرسية',
             ),
             _MenuItem(
               route: ErpRoute.announcements,
               icon: Icons.campaign_outlined,
-              label: 'الإعلانات',
-            ),
-            _MenuItem(
-              route: ErpRoute.documents,
-              icon: Icons.folder_shared_outlined,
-              label: 'الوثائق والمستندات',
+              label: 'الإعلانات والتعاميم',
             ),
           ],
         ),
@@ -145,7 +160,7 @@ class _ErpShellState extends State<ErpShell> {
             _MenuItem(
               route: ErpRoute.settings,
               icon: Icons.settings_outlined,
-              label: 'الإعدادات',
+              label: 'الإعدادات العامة',
             ),
           ],
         ),
@@ -164,7 +179,12 @@ class _ErpShellState extends State<ErpShell> {
           _MenuItem(
             route: ErpRoute.children,
             icon: Icons.child_care_outlined,
-            label: 'أبنائي والنتائج',
+            label: 'أبنائي والنتائج والرسوم',
+          ),
+          _MenuItem(
+            route: ErpRoute.dailyLogbook,
+            icon: Icons.auto_stories_outlined,
+            label: 'كراس الدروس اليومي',
           ),
           _MenuItem(
             route: ErpRoute.homework,

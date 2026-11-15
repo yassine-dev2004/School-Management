@@ -86,6 +86,7 @@ Future<bool> showErpConfirmDialog(
 class ErpCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
   final VoidCallback? onTap;
   final bool selected;
 
@@ -93,13 +94,14 @@ class ErpCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding,
+    this.margin,
     this.onTap,
     this.selected = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    Widget card = Material(
       color: ErpColors.surface,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
@@ -118,6 +120,10 @@ class ErpCard extends StatelessWidget {
         ),
       ),
     );
+    if (margin != null) {
+      return Padding(padding: margin!, child: card);
+    }
+    return card;
   }
 }
 
@@ -197,39 +203,48 @@ class ErpBadge extends StatelessWidget {
   final String label;
   final ErpBadgeTone tone;
   final IconData? icon;
+  final Color? color;
+  final Color? backgroundColor;
 
   const ErpBadge({
     super.key,
     required this.label,
     this.tone = ErpBadgeTone.neutral,
     this.icon,
+    this.color,
+    this.backgroundColor,
   });
 
   @override
   Widget build(BuildContext context) {
     Color bg;
     Color fg;
-    switch (tone) {
-      case ErpBadgeTone.success:
-        bg = ErpColors.successLight;
-        fg = ErpColors.success;
-        break;
-      case ErpBadgeTone.warning:
-        bg = ErpColors.warningLight;
-        fg = ErpColors.warning;
-        break;
-      case ErpBadgeTone.danger:
-        bg = ErpColors.dangerLight;
-        fg = ErpColors.danger;
-        break;
-      case ErpBadgeTone.info:
-        bg = ErpColors.infoLight;
-        fg = ErpColors.info;
-        break;
-      case ErpBadgeTone.neutral:
-        bg = ErpColors.primaryLight;
-        fg = ErpColors.primary;
-        break;
+    if (color != null && backgroundColor != null) {
+      bg = backgroundColor!;
+      fg = color!;
+    } else {
+      switch (tone) {
+        case ErpBadgeTone.success:
+          bg = ErpColors.successLight;
+          fg = ErpColors.success;
+          break;
+        case ErpBadgeTone.warning:
+          bg = ErpColors.warningLight;
+          fg = ErpColors.warning;
+          break;
+        case ErpBadgeTone.danger:
+          bg = ErpColors.dangerLight;
+          fg = ErpColors.danger;
+          break;
+        case ErpBadgeTone.info:
+          bg = ErpColors.infoLight;
+          fg = ErpColors.info;
+          break;
+        case ErpBadgeTone.neutral:
+          bg = ErpColors.primaryLight;
+          fg = ErpColors.primary;
+          break;
+      }
     }
 
     return Container(
