@@ -19,6 +19,7 @@ public class TeacherRequest {
     private String phone;
     private String qualification;
     private String joiningDate;
+    private Double hourlyRate = 25.0;
     private Set<Long> subjectIds;
 
     public TeacherRequest() {}
@@ -93,5 +94,13 @@ public class TeacherRequest {
 
     public void setSubjectIds(Set<Long> subjectIds) {
         this.subjectIds = subjectIds;
+    }
+
+    public Double getHourlyRate() {
+        return hourlyRate != null ? hourlyRate : 25.0;
+    }
+
+    public void setHourlyRate(Double hourlyRate) {
+        this.hourlyRate = hourlyRate;
     }
 }

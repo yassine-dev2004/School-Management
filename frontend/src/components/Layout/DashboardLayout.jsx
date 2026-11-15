@@ -93,7 +93,7 @@ const DashboardLayout = () => {
               <span className="mobile-brand-dot">
                 <School size={16} />
               </span>
-              <span className="mobile-brand-name">مدرستي ERP</span>
+              <span className="mobile-brand-name">مدرسة ابن خلدون</span>
             </div>
           </div>
 

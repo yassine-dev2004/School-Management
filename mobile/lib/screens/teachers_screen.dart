@@ -98,6 +98,9 @@ class _TeachersScreenState extends State<TeachersScreen> {
       text: teacher?['joiningDate']?.toString() ??
           DateTime.now().toIso8601String().split('T').first,
     );
+    final hourlyRateCtrl = TextEditingController(
+      text: teacher?['hourlyRate']?.toString() ?? '25.0',
+    );
 
     final selectedSubjectIds = <int>{};
     if (teacher != null && teacher['subjects'] is List) {
@@ -225,6 +228,15 @@ class _TeachersScreenState extends State<TeachersScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: hourlyRateCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'سعر ساعة التدريس (دينار تونسي TND) *',
+                    helperText: 'يُعتمد لاحتساب أجور حصص الأستاذ ومستحقاته',
+                  ),
+                ),
                 if (_subjects.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   const Text(
@@ -289,6 +301,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
                               'password': passwordCtrl.text.trim(),
                             'qualification': qualCtrl.text.trim(),
                             'joiningDate': joinCtrl.text.trim(),
+                            'hourlyRate': double.tryParse(hourlyRateCtrl.text.trim()) ?? 25.0,
                             'subjectIds': selectedSubjectIds.toList(),
                           };
                           final res = teacher != null
@@ -413,10 +426,14 @@ class _TeachersScreenState extends State<TeachersScreen> {
                                 Wrap(
                                   spacing: 6,
                                   runSpacing: 6,
-                                  children: subs
-                                      .map((s) => ErpBadge(
-                                          label: s['name']?.toString() ?? ''))
-                                      .toList(),
+                                  children: [
+                                    ...subs.map((s) => ErpBadge(
+                                        label: s['name']?.toString() ?? '')),
+                                    ErpBadge(
+                                      label: '${t['hourlyRate'] ?? 25} د.ت/ساعة',
+                                      tone: ErpBadgeTone.success,
+                                    ),
+                                  ],
                                 ),
                               ],
                               const SizedBox(height: 8),

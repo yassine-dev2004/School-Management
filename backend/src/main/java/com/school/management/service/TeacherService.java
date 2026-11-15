@@ -88,6 +88,7 @@ public class TeacherService {
         teacher.setUser(savedUser);
         teacher.setQualification(request.getQualification());
         teacher.setJoiningDate(request.getJoiningDate());
+        teacher.setHourlyRate(request.getHourlyRate() != null ? request.getHourlyRate() : 25.0);
 
         if (request.getSubjectIds() != null && !request.getSubjectIds().isEmpty()) {
             Set<Subject> subjects = new HashSet<>(subjectRepository.findAllById(request.getSubjectIds()));
@@ -130,6 +131,7 @@ public class TeacherService {
         // Update Teacher
         if (request.getQualification() != null) teacher.setQualification(request.getQualification());
         if (request.getJoiningDate() != null) teacher.setJoiningDate(request.getJoiningDate());
+        if (request.getHourlyRate() != null) teacher.setHourlyRate(request.getHourlyRate());
 
         if (request.getSubjectIds() != null) {
             Set<Subject> subjects = new HashSet<>(subjectRepository.findAllById(request.getSubjectIds()));

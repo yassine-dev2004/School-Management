@@ -99,6 +99,23 @@ public class StudentPaymentController {
         return ResponseEntity.ok(studentPaymentService.save(payment));
     }
 
+    @PostMapping("/student/{studentId}/quick-status")
+    @PreAuthorize("hasAuthority('ADMINISTRATOR')")
+    public ResponseEntity<Map<String, Object>> updateQuickStatus(
+            @PathVariable Long studentId,
+            @RequestBody Map<String, Object> body) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String recordedBy = auth != null ? auth.getName() : "ADMIN";
+        String academicYear = (String) body.getOrDefault("academicYear", "2025-2026");
+        String status = (String) body.getOrDefault("status", "PAID");
+        Double customAmount = body.get("amount") != null ? Double.valueOf(body.get("amount").toString()) : null;
+
+        Map<String, Object> updatedSummary = studentPaymentService.quickSettleOrUpdateYearStatus(
+                studentId, academicYear, status, customAmount, recordedBy
+        );
+        return ResponseEntity.ok(updatedSummary);
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMINISTRATOR')")
     public ResponseEntity<?> deletePayment(@PathVariable Long id) {

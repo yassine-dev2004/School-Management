@@ -29,6 +29,15 @@ public class DataSeeder implements CommandLineRunner {
     private SchoolClassRepository schoolClassRepository;
 
     @Autowired
+    private ParentRepository parentRepository;
+
+    @Autowired
+    private StudentRepository studentRepository;
+
+    @Autowired
+    private DailyLessonLogRepository dailyLessonLogRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
@@ -107,6 +116,62 @@ public class DataSeeder implements CommandLineRunner {
                 }
 
                 System.out.println(">>> DataSeeder: Linked Teacher profile for 'teacher' / 'teacher123' successfully.");
+            }
+
+            // 4. Seed Default Parent if missing or unlinked
+            User parentUser = userRepository.findByUsername("parent").orElseGet(() -> {
+                User u = new User();
+                u.setUsername("parent");
+                u.setEmail("parent@school.com");
+                u.setPassword(passwordEncoder.encode("parent123"));
+                u.setFirstName("محمد");
+                u.setLastName("التونسي");
+                u.setPhone("98123456");
+
+                Set<Role> roles = new HashSet<>();
+                roleRepository.findByName(RoleName.PARENT).ifPresent(roles::add);
+                u.setRoles(roles);
+                return userRepository.save(u);
+            });
+
+            Parent parent = parentRepository.findById(parentUser.getId()).orElseGet(() -> {
+                Parent p = new Parent();
+                p.setUser(parentUser);
+                p.setOccupation("مهندس");
+                p.setAddress("تونس، المنار");
+                return parentRepository.save(p);
+            });
+
+            // Ensure parent has at least one child linked
+            java.util.List<Student> students = studentRepository.findAll();
+            if (!students.isEmpty()) {
+                boolean hasLinkedChild = students.stream().anyMatch(s -> s.getParent() != null && s.getParent().getId().equals(parent.getId()));
+                if (!hasLinkedChild) {
+                    Student firstStudent = students.get(0);
+                    firstStudent.setParent(parent);
+                    studentRepository.save(firstStudent);
+                    System.out.println(">>> DataSeeder: Linked Student '" + firstStudent.getUser().getFirstName() + "' to Parent 'parent'.");
+                }
+            }
+
+            // Seed sample daily lesson log if empty
+            if (dailyLessonLogRepository.count() == 0 && !schoolClassRepository.findAll().isEmpty()) {
+                SchoolClass sc = schoolClassRepository.findAll().get(0);
+                DailyLessonLog sampleLog = new DailyLessonLog();
+                sampleLog.setSchoolClass(sc);
+                if (!subjectRepository.findAll().isEmpty()) {
+                    sampleLog.setSubject(subjectRepository.findAll().get(0));
+                }
+                sampleLog.setDate(new java.util.Date());
+                sampleLog.setTitle("الدرس 4: التراكيب النحوية وإعراب الجملة");
+                sampleLog.setSummary("تم شرح درس المفعول به والمفعول المطلق مع إنجاز تمارين تطبيقية في القسم وكراس الأنشطة.");
+                sampleLog.setHomeworkAssigned("إنجاز التمرين عدد 3 و 4 صفحة 28 من كراس التمارين.");
+                sampleLog.setPeriod("الحصة الصباحية (08:00 - 10:00)");
+                if (!teacherRepository.findAll().isEmpty()) {
+                    sampleLog.setTeacher(teacherRepository.findAll().get(0));
+                }
+                dailyLessonLogRepository.save(sampleLog);
+                System.out.println(">>> DataSeeder: Sample daily lesson log created successfully.");
             }
         } catch (Exception e) {
             System.err.println(">>> DataSeeder warning: " + e.getMessage());

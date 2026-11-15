@@ -125,6 +125,7 @@ const PaymentsPage = () => {
     try {
       await api.post('/payments', {
         studentId: selectedStudent.id,
+        student: { id: selectedStudent.id },
         academicYear: paymentForm.academicYear,
         month: paymentForm.month,
         amount: Number(paymentForm.amount),
@@ -142,6 +143,27 @@ const PaymentsPage = () => {
       showToast('فشل تسجيل الدفعة: ' + (err.response?.data?.message || err.message), 'error');
     } finally {
       setSavingPayment(false);
+    }
+  };
+
+  const handleQuickStatus = async (st, targetStatus) => {
+    const isPaid = targetStatus === 'PAID';
+    const stName = `${st.user?.firstName || ''} ${st.user?.lastName || ''}`.trim();
+    const msg = isPaid
+      ? `هل تريد تأكيد خلاص السنة الدراسية ${academicYear} بالكامل للطالب "${stName}" وتسوية المتبقي كخالص؟`
+      : `هل تريد تغيير حالة السنة للطالب "${stName}" إلى غير خالص؟`;
+
+    if (!window.confirm(msg)) return;
+
+    try {
+      await api.post(`/payments/student/${st.id}/quick-status`, {
+        academicYear,
+        status: targetStatus,
+      });
+      showToast(isPaid ? 'تم تسجيل خلاص السنة بالكامل للطالب بنجاح 🎉' : 'تم تحديث الحالة إلى غير خالص', 'success');
+      await loadData();
+    } catch (err) {
+      showToast('فشل تحديث الحالة: ' + (err.response?.data?.message || err.message), 'error');
     }
   };
 
@@ -467,18 +489,35 @@ const PaymentsPage = () => {
                           </div>
                         </td>
                         <td>
-                          <div style={{ display: 'flex', gap: '6px' }}>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                             <button
-                              className="btn btn-sm btn-primary"
-                              onClick={() => handleOpenPaymentModal(st)}
-                              title="تسجيل دفعة جديدة"
+                              className={`btn btn-sm ${status === 'PAID' ? 'btn-ghost' : 'btn-primary'}`}
+                              onClick={() => handleQuickStatus(st, status === 'PAID' ? 'UNPAID' : 'PAID')}
+                              title={status === 'PAID' ? 'إعادة التعيين كغير خالص' : 'تسوية سريعة: تعيين السنة كاملة كخالص (100%)'}
+                              style={{
+                                background: status === 'PAID' ? 'rgba(239, 68, 68, 0.12)' : '#10b981',
+                                color: status === 'PAID' ? '#ef4444' : '#ffffff',
+                                border: status === 'PAID' ? '1px solid rgba(239, 68, 68, 0.3)' : 'none',
+                                fontWeight: 700,
+                                fontSize: '0.78rem',
+                                padding: '4px 8px'
+                              }}
                             >
-                              <Plus size={14} /> تسجيل دفعة
+                              {status === 'PAID' ? 'تعيين غير خالص' : '⚡ خلاص كامل'}
+                            </button>
+                            <button
+                              className="btn btn-sm btn-secondary"
+                              onClick={() => handleOpenPaymentModal(st)}
+                              title="تسجيل دفعة شهرية"
+                              style={{ padding: '4px 8px', fontSize: '0.78rem' }}
+                            >
+                              <Plus size={13} /> دفعة
                             </button>
                             <button
                               className="btn btn-sm btn-ghost"
                               onClick={() => handleOpenSummary(st)}
                               title="كشف حساب مفصل"
+                              style={{ padding: '4px 8px' }}
                             >
                               <Receipt size={14} />
                             </button>
@@ -496,123 +535,123 @@ const PaymentsPage = () => {
 
       {/* Add / Record Payment Modal */}
       {showPaymentModal && selectedStudent && (
-        <div className="modal-overlay">
-          <div className="modal-card animate-scale-up" style={{ maxWidth: '480px' }}>
+        <div className="modal-overlay" onClick={() => setShowPaymentModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
             <div className="modal-header">
-              <h3>تسجيل دفعة قسط دراسي</h3>
+              <h2>تسجيل دفعة قسط دراسي</h2>
               <button className="btn-icon" onClick={() => setShowPaymentModal(false)}>
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleSavePayment}>
-              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{
-                  padding: '10px 12px',
-                  background: 'var(--surface-hover)',
-                  borderRadius: '8px',
-                  fontSize: '0.9rem'
-                }}>
-                  <strong>الطالب:</strong> {selectedStudent.user?.firstName} {selectedStudent.user?.lastName} | 
-                  <strong style={{ marginRight: '6px' }}>الفصل:</strong> {selectedStudent.schoolClass?.name || 'غير معين'}
-                </div>
-
-                <div className="form-group">
-                  <label>السنة الدراسية</label>
-                  <input
-                    className="input-field"
-                    value={paymentForm.academicYear}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, academicYear: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>الشهر الدراسي المستهدف</label>
-                  <select
-                    className="input-field"
-                    value={paymentForm.month}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, month: e.target.value })}
-                  >
-                    {ACADEMIC_MONTHS.map((m) => (
-                      <option key={m} value={m}>{MONTH_NAMES[m]}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>المبلغ المدفوع (دينار تونسي TND)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    min="1"
-                    className="input-field"
-                    value={paymentForm.amount}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>تاريخ السداد</label>
-                  <input
-                    type="date"
-                    className="input-field"
-                    value={paymentForm.paymentDate}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>طريقة الدفع</label>
-                  <select
-                    className="input-field"
-                    value={paymentForm.paymentMethod}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
-                  >
-                    <option value="نقداً (Cash)">نقداً (Cash)</option>
-                    <option value="شيك بنكي (Chèque)">شيك بنكي (Chèque)</option>
-                    <option value="تحويل بنكي (Virement)">تحويل بنكي (Virement)</option>
-                    <option value="بطاقة بنكية (Carte)">بطاقة بنكية (Carte)</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>رقم الوصل / الإيصال</label>
-                  <input
-                    className="input-field"
-                    value={paymentForm.receiptNumber}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, receiptNumber: e.target.value })}
-                    placeholder="مثال: REC-00123"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>حالة الدفعة الشهرية</label>
-                  <select
-                    className="input-field"
-                    value={paymentForm.status}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, status: e.target.value })}
-                  >
-                    <option value="PAID">خالص بالكامل (Paid)</option>
-                    <option value="PARTIAL">تسديد جزئي (Partial)</option>
-                    <option value="UNPAID">غير مسدد (Unpaid)</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>ملاحظات إضافية</label>
-                  <textarea
-                    rows="2"
-                    className="input-field"
-                    value={paymentForm.notes}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
-                    placeholder="أي توضيحات أو تفاصيل خاصة بالشيك أو القسط..."
-                  ></textarea>
-                </div>
+            <form onSubmit={handleSavePayment} className="modal-form">
+              <div style={{
+                padding: '12px 14px',
+                background: 'var(--bg-base, #f1f5f9)',
+                borderRadius: '10px',
+                border: '1px solid var(--border-color, #e2e8f0)',
+                fontSize: '0.9rem',
+                color: 'var(--text-main, #0f172a)'
+              }}>
+                <strong style={{ color: 'var(--primary)' }}>الطالب:</strong> {selectedStudent.user?.firstName} {selectedStudent.user?.lastName} | 
+                <strong style={{ color: 'var(--primary)', marginRight: '8px' }}>الفصل:</strong> {selectedStudent.schoolClass?.name || 'غير معين'}
               </div>
 
-              <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <div className="form-group">
+                <label>السنة الدراسية</label>
+                <input
+                  className="input-field"
+                  value={paymentForm.academicYear}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, academicYear: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>الشهر الدراسي المستهدف</label>
+                <select
+                  className="input-field"
+                  value={paymentForm.month}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, month: e.target.value })}
+                >
+                  {ACADEMIC_MONTHS.map((m) => (
+                    <option key={m} value={m}>{MONTH_NAMES[m]}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>المبلغ المدفوع (دينار تونسي TND)</label>
+                <input
+                  type="number"
+                  step="any"
+                  min="1"
+                  className="input-field"
+                  value={paymentForm.amount}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>تاريخ السداد</label>
+                <input
+                  type="date"
+                  className="input-field"
+                  value={paymentForm.paymentDate}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>طريقة الدفع</label>
+                <select
+                  className="input-field"
+                  value={paymentForm.paymentMethod}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
+                >
+                  <option value="نقداً (Cash)">نقداً (Cash)</option>
+                  <option value="شيك بنكي (Chèque)">شيك بنكي (Chèque)</option>
+                  <option value="تحويل بنكي (Virement)">تحويل بنكي (Virement)</option>
+                  <option value="بطاقة بنكية (Carte)">بطاقة بنكية (Carte)</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>رقم الوصل / الإيصال</label>
+                <input
+                  className="input-field"
+                  value={paymentForm.receiptNumber}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, receiptNumber: e.target.value })}
+                  placeholder="مثال: REC-00123"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>حالة الدفعة الشهرية</label>
+                <select
+                  className="input-field"
+                  value={paymentForm.status}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, status: e.target.value })}
+                >
+                  <option value="PAID">خالص بالكامل (Paid)</option>
+                  <option value="PARTIAL">تسديد جزئي (Partial)</option>
+                  <option value="UNPAID">غير مسدد (Unpaid)</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>ملاحظات إضافية</label>
+                <textarea
+                  rows="2"
+                  className="input-field"
+                  value={paymentForm.notes}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                  placeholder="أي توضيحات أو تفاصيل خاصة بالشيك أو القسط..."
+                ></textarea>
+              </div>
+
+              <div className="modal-actions" style={{ marginTop: '16px' }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setShowPaymentModal(false)}>
                   إلغاء
                 </button>
@@ -627,12 +666,12 @@ const PaymentsPage = () => {
 
       {/* Student Summary Detail Modal */}
       {showSummaryModal && selectedStudent && (
-        <div className="modal-overlay">
-          <div className="modal-card animate-scale-up" style={{ maxWidth: '640px' }}>
+        <div className="modal-overlay" onClick={() => setShowSummaryModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
             <div className="modal-header">
-              <h3>كشف الأقساط والرسوم للطالب: {selectedStudent.user?.firstName} {selectedStudent.user?.lastName}</h3>
+              <h2>كشف الأقساط والرسوم للطالب: {selectedStudent.user?.firstName} {selectedStudent.user?.lastName}</h2>
               <button className="btn-icon" onClick={() => setShowSummaryModal(false)}>
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

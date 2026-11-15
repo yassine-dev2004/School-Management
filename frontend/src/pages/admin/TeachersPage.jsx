@@ -22,6 +22,7 @@ const TeachersPage = () => {
     password: '',
     qualification: '',
     joiningDate: '',
+    hourlyRate: 25.0,
     subjectIds: [],
   });
 
@@ -83,6 +84,7 @@ const TeachersPage = () => {
         password: '',
         qualification: teacher.qualification || '',
         joiningDate: teacher.joiningDate || '',
+        hourlyRate: teacher.hourlyRate != null ? teacher.hourlyRate : 25.0,
         subjectIds: Array.isArray(teacher.subjects) ? teacher.subjects.map((s) => s.id) : [],
       });
     } else {
@@ -96,6 +98,7 @@ const TeachersPage = () => {
         password: '',
         qualification: '',
         joiningDate: new Date().toISOString().split('T')[0],
+        hourlyRate: 25.0,
         subjectIds: [],
       });
     }
@@ -130,6 +133,7 @@ const TeachersPage = () => {
         password: form.password.trim() || undefined,
         qualification: form.qualification.trim() || '',
         joiningDate: form.joiningDate || '',
+        hourlyRate: form.hourlyRate ? Number(form.hourlyRate) : 25.0,
         subjectIds: form.subjectIds,
       };
 
@@ -241,6 +245,7 @@ const TeachersPage = () => {
                   <th>#</th>
                   <th>اسم المعلم</th>
                   <th>بيانات تسجيل الدخول</th>
+                  <th>سعر الساعة</th>
                   <th>المؤهل العلمي</th>
                   <th>المواد المسندة</th>
                   <th>الهاتف</th>
@@ -274,6 +279,11 @@ const TeachersPage = () => {
                             🔑 كلمة السر: {item.user?.username ? 'مفعلة' : '—'}
                           </span>
                         </div>
+                      </td>
+                      <td>
+                        <span className="badge badge-success" style={{ fontWeight: 700 }}>
+                          {item.hourlyRate != null ? item.hourlyRate : 25} د.ت/ساعة
+                        </span>
                       </td>
                       <td>{item.qualification || '—'}</td>
                       <td>
@@ -412,6 +422,23 @@ const TeachersPage = () => {
                     onChange={(e) => setForm({ ...form, joiningDate: e.target.value })}
                   />
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label>سعر ساعة التدريس (دينار تونسي TND)</label>
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  className="input-field"
+                  placeholder="مثال: 25"
+                  value={form.hourlyRate}
+                  onChange={(e) => setForm({ ...form, hourlyRate: e.target.value })}
+                  required
+                />
+                <small style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '4px', display: 'block' }}>
+                  يُعتمد هذا السعر تلقائياً عند تسجيل حصص الأستاذ لحساب مستحقاته بالساعة.
+                </small>
               </div>
 
               <div className="form-group">

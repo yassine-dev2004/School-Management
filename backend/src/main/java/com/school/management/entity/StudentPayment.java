@@ -23,6 +23,9 @@ public class StudentPayment {
     @JsonIgnoreProperties({"parent", "hibernateLazyInitializer", "handler"})
     private Student student;
 
+    @Transient
+    private Long studentId;
+
     @Column(name = "academic_year", nullable = false)
     private String academicYear = "2026-2027"; // السنة الدراسية
 
@@ -149,5 +152,13 @@ public class StudentPayment {
 
     public void setRecordedBy(String recordedBy) {
         this.recordedBy = recordedBy;
+    }
+
+    public Long getStudentId() {
+        return studentId != null ? studentId : (student != null ? student.getId() : null);
+    }
+
+    public void setStudentId(Long studentId) {
+        this.studentId = studentId;
     }
 }

@@ -22,6 +22,9 @@ public class Teacher {
     private String qualification;
     private String joiningDate;
 
+    @Column(name = "hourly_rate")
+    private Double hourlyRate = 25.0; // سعر الساعة بالدينار التونسي
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "teacher_subjects",
             joinColumns = @JoinColumn(name = "teacher_id"),
@@ -90,5 +93,13 @@ public class Teacher {
 
     public void setClasses(List<SchoolClass> classes) {
         this.classes = classes;
+    }
+
+    public Double getHourlyRate() {
+        return hourlyRate != null ? hourlyRate : 25.0;
+    }
+
+    public void setHourlyRate(Double hourlyRate) {
+        this.hourlyRate = hourlyRate;
     }
 }
