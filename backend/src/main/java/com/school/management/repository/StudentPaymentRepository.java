@@ -10,9 +10,11 @@ import java.util.List;
 
 @Repository
 public interface StudentPaymentRepository extends JpaRepository<StudentPayment, Long> {
-    List<StudentPayment> findByStudentId(Long studentId);
+    @Query("SELECT p FROM StudentPayment p WHERE p.student.id = :studentId")
+    List<StudentPayment> findByStudentId(@Param("studentId") Long studentId);
 
-    List<StudentPayment> findByStudentIdAndAcademicYear(Long studentId, String academicYear);
+    @Query("SELECT p FROM StudentPayment p WHERE p.student.id = :studentId AND p.academicYear = :academicYear")
+    List<StudentPayment> findByStudentIdAndAcademicYear(@Param("studentId") Long studentId, @Param("academicYear") String academicYear);
 
     List<StudentPayment> findByAcademicYear(String academicYear);
 
