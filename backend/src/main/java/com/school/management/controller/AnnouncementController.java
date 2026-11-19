@@ -19,6 +19,9 @@ public class AnnouncementController {
     @Autowired
     private AnnouncementService announcementService;
 
+    @Autowired
+    private com.school.management.service.NotificationService notificationService;
+
     @GetMapping
     public List<Announcement> getAllAnnouncements() {
         return announcementService.getAllAnnouncements();
@@ -30,10 +33,17 @@ public class AnnouncementController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ADMINISTRATOR')")
+    @PreAuthorize("hasAuthority('ADMINISTRATOR') or hasAuthority('ROLE_ADMINISTRATOR') or hasRole('ADMIN')")
     public Announcement createAnnouncement(@Valid @RequestBody Announcement announcement) {
         announcement.setDatePosted(new Date());
-        return announcementService.saveAnnouncement(announcement);
+        Announcement saved = announcementService.saveAnnouncement(announcement);
+        try {
+            Long classId = saved.getTargetClass() != null ? saved.getTargetClass().getId() : null;
+            notificationService.broadcastPush(saved.getTargetRole(), classId, saved.getTitle(), saved.getContent());
+        } catch (Exception e) {
+            // Push notification error shouldn't fail announcement creation
+        }
+        return saved;
     }
 
     @PutMapping("/{id}")

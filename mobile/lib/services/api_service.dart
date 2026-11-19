@@ -584,4 +584,27 @@ class ApiService {
   static Future<ApiResult<dynamic>> deleteDocument(int id) async {
     return delete('/documents/$id');
   }
+
+  // Push Notifications API
+  static Future<ApiResult<dynamic>> registerFcmToken(String token, {String? role}) async {
+    return post('/notifications/register-token', {
+      'token': token,
+      'deviceType': 'ANDROID',
+      if (role != null) 'role': role,
+    });
+  }
+
+  static Future<ApiResult<dynamic>> sendPushNotificationAdmin({
+    required String title,
+    required String body,
+    String targetRole = 'ALL',
+    int? classId,
+  }) async {
+    return post('/notifications/send', {
+      'title': title,
+      'body': body,
+      'targetRole': targetRole,
+      if (classId != null) 'classId': classId,
+    });
+  }
 }

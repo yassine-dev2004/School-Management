@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import '../theme/erp_theme.dart';
 import '../widgets/erp_widgets.dart';
 import 'dashboard_screen.dart';
@@ -40,6 +41,11 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result['success'] == true) {
+      final role = result['data']?['roles'] != null && (result['data']['roles'] as List).isNotEmpty
+          ? result['data']['roles'][0].toString()
+          : null;
+      NotificationService.setupUserSubscriptions(role: role);
+
       showErpToast(context, 'تم تسجيل الدخول بنجاح');
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const DashboardScreen()),

@@ -354,9 +354,27 @@ const AnnouncementsPage = () => {
                 />
               </div>
 
+              <div style={{
+                background: 'rgba(37, 99, 235, 0.08)',
+                border: '1px solid rgba(37, 99, 235, 0.2)',
+                borderRadius: '10px',
+                padding: '12px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                fontSize: '0.86rem',
+                color: 'var(--text-main)',
+                marginTop: '12px',
+              }}>
+                <Bell size={20} color="#2563eb" style={{ flexShrink: 0 }} />
+                <span>
+                  <strong>إشعار فوري (Push Notification):</strong> سيصل هذا التنبيه مباشرة إلى شاشات هواتف الفئة المحددة بصوت واهتزاز.
+                </span>
+              </div>
+
               <div className="modal-actions" style={{ marginTop: '16px' }}>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? 'جاري النشر...' : editing ? 'حفظ التعديلات' : 'نشر الإعلان'}
+                  {saving ? 'جاري النشر...' : editing ? 'حفظ التعديلات' : 'نشر الإعلان وإرسال الإشعار 🚀'}
                 </button>
                 <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>
                   إلغاء

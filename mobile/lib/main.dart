@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/login_screen.dart';
+import 'services/notification_service.dart';
 import 'theme/erp_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.initialize();
   runApp(const SchoolManagementApp());
 }
 
@@ -14,7 +17,12 @@ class SchoolManagementApp extends StatelessWidget {
   Future<bool> _checkLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    return token != null && token.isNotEmpty;
+    final loggedIn = token != null && token.isNotEmpty;
+    if (loggedIn) {
+      final role = prefs.getString('role');
+      NotificationService.setupUserSubscriptions(role: role);
+    }
+    return loggedIn;
   }
 
   @override
