@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../navigation/erp_route.dart';
 import '../navigation/erp_router.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import '../theme/erp_theme.dart';
+import 'erp_widgets.dart';
 
 class _MenuSection {
   final String title;
@@ -45,11 +48,24 @@ class _ErpShellState extends State<ErpShell> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _username = '';
   String _role = 'PARENT';
+  StreamSubscription? _notifSub;
 
   @override
   void initState() {
     super.initState();
     _loadSession();
+    _notifSub = NotificationService.onNotificationReceived.stream.listen((msg) {
+      if (!mounted) return;
+      final title = msg.notification?.title ?? msg.data['title'] ?? 'إشعار مدرسي جديد';
+      final body = msg.notification?.body ?? msg.data['body'] ?? '';
+      showErpToast(context, '🔔 $title: $body');
+    });
+  }
+
+  @override
+  void dispose() {
+    _notifSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadSession() async {

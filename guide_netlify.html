@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>دليل إعداد ونشر واجهة الويب على Netlify - مدرسة ابن خلدون</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+    @page {
+      size: A4;
+      margin: 12mm 14mm 14mm 14mm;
+      @bottom-center {
+        content: counter(page) " / " counter(pages);
+        font-family: 'Cairo', sans-serif;
+        font-size: 8.5pt;
+        color: #94a3b8;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.55;
+      font-size: 10pt;
+      direction: rtl;
+    }
+
+    .header {
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-content h1 {
+      font-size: 18pt;
+      font-weight: 900;
+      color: #1e3a8a;
+      margin-bottom: 3px;
+    }
+
+    .header-content p {
+      color: #64748b;
+      font-size: 10pt;
+      font-weight: 600;
+    }
+
+    .badge-top {
+      background: #eff6ff;
+      color: #2563eb;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 8.5pt;
+      border: 1px solid #bfdbfe;
+    }
+
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      break-inside: avoid;
+    }
+
+    .card-accent {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-right: 4px solid #16a34a;
+    }
+
+    .card-info {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-right: 4px solid #2563eb;
+    }
+
+    .card-warning {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-right: 4px solid #d97706;
+    }
+
+    h2 {
+      font-size: 12pt;
+      font-weight: 800;
+      color: #1e293b;
+      margin: 16px 0 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      break-after: avoid;
+    }
+
+    h3 {
+      font-size: 10.5pt;
+      font-weight: 800;
+      color: #1e3a8a;
+      margin: 12px 0 6px 0;
+      break-after: avoid;
+    }
+
+    .step-number {
+      background: #1e3a8a;
+      color: white;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8.5pt;
+      font-weight: 800;
+      margin-left: 6px;
+    }
+
+    p {
+      margin-bottom: 6px;
+      color: #334155;
+    }
+
+    ul, ol {
+      margin: 6px 20px 10px 0;
+      color: #334155;
+    }
+
+    li {
+      margin-bottom: 4px;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 8.8pt;
+      background: #f1f5f9;
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: #0f172a;
+      direction: ltr;
+      display: inline-block;
+      border: 1px solid #e2e8f0;
+    }
+
+    pre {
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 8.8pt;
+      line-height: 1.45;
+      direction: ltr;
+      text-align: left;
+      overflow-x: auto;
+      margin: 6px 0 10px 0;
+      break-inside: avoid;
+    }
+
+    .pre-comment { color: #94a3b8; }
+    .pre-cmd { color: #38bdf8; font-weight: 600; }
+    .pre-val { color: #4ade80; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 12px 0;
+      font-size: 9pt;
+      break-inside: avoid;
+    }
+
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 6px 10px;
+      text-align: right;
+    }
+
+    th {
+      background: #f1f5f9;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    .page-break {
+      page-break-before: always;
+      break-before: page;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 7.5pt;
+      font-weight: 700;
+    }
+    .tag-blue { background: #dbeafe; color: #1e40af; }
+    .tag-green { background: #dcfce7; color: #166534; }
+
+    .kv-table td:first-child {
+      font-weight: 700;
+      width: 32%;
+      background: #f8fafc;
+    }
+
+    .footer-note {
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 8pt;
+      color: #94a3b8;
+      break-inside: avoid;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== PAGE 1 ==================== -->
+  <div class="header">
+    <div class="header-content">
+      <h1>دليل إعداد ونشر واجهة الويب على Netlify</h1>
+      <p>مشروع نظام إدارة المدرسة الذكية - <strong>مدرسة ابن خلدون</strong> (Madrasat Ibn Khaldun)</p>
+    </div>
+    <div class="badge-top">React 18 + Vite + Netlify CI/CD</div>
+  </div>
+
+  <div class="card card-accent">
+    <strong style="color: #16a34a; font-size: 10.5pt;">ملاحظة سريعة للمطور:</strong>
+    <p style="margin-top: 3px; margin-bottom: 0;">
+      خادم الباك إند (Spring Boot) وقاعدة البيانات يعملان بشكل كامل على خادم الـ VPS السحابي، وجميع الـ Endpoints جاهزة ومفعل عليها CORS لجميع النطاقات. عملك ينحصر فقط في واجهة الويب داخل مجلد <code>frontend/</code> وربطها بحساب Netlify الخاص بك.
+    </p>
+  </div>
+
+  <h2>بيانات الربط والمستودع السحابي</h2>
+  <table class="kv-table">
+    <tr>
+      <td>مستودع GitHub</td>
+      <td><code>https://github.com/yassine-dev2004/School-Management.git</code></td>
+    </tr>
+    <tr>
+      <td>رابط الـ API السحابي (HTTPS)</td>
+      <td><code>https://rio-openings-cognitive-four.trycloudflare.com/api</code></td>
+    </tr>
+    <tr>
+      <td>رابط الخادم المباشر (VPS IP)</td>
+      <td><code>http://51.210.214.70:8085/api</code> (ملاحظة: Netlify يفرض HTTPS لمنع Mixed Content)</td>
+    </tr>
+    <tr>
+      <td>مجلد الواجهة الأمامية بالمستودع</td>
+      <td><code>frontend/</code></td>
+    </tr>
+    <tr>
+      <td>حساب تجربة تسجيل الدخول</td>
+      <td>اسم المستخدم: <code>admin</code> / كلمة المرور: <code>admin123</code></td>
+    </tr>
+  </table>
+
+  <h2><span class="step-number">1</span> المتطلبات الأساسية (Prerequisites)</h2>
+  <ul>
+    <li>تثبيت <strong>Git</strong> للتعامل مع مستودع GitHub.</li>
+    <li>تثبيت <strong>Node.js</strong> (الإصدار 18 أو 20 أو أحدث) مع مدير الحزم <strong>npm</strong>.</li>
+    <li>محرر أكواد (مثل <strong>VS Code</strong>).</li>
+    <li>حساب مجاني على منصة <strong>Netlify</strong> (<a href="https://app.netlify.com">app.netlify.com</a>).</li>
+  </ul>
+
+  <h2><span class="step-number">2</span> استنساخ المستودع والانتقال لمجلد الواجهة</h2>
+  <p>افتح سطر الأوامر (Terminal أو PowerShell) ونفذ ما يلي:</p>
+  <pre><span class="pre-comment"># 1. استنساخ المستودع كاملاً</span>
+<span class="pre-cmd">git clone</span> https://github.com/yassine-dev2004/School-Management.git
+
+<span class="pre-comment"># 2. الدخول لمجلد المشروع ثم لمجلد الواجهة الأمامية</span>
+<span class="pre-cmd">cd</span> School-Management/frontend</pre>
+
+  <h2><span class="step-number">3</span> تثبيت الحزم والمكتبات (Dependencies)</h2>
+  <p>داخل مجلد <code>frontend</code>، قم بتثبيت جميع المكتبات اللازمة للمشروع:</p>
+  <pre><span class="pre-cmd">npm install</span></pre>
+
+  <div class="page-break"></div>
+
+  <!-- ==================== PAGE 2 ==================== -->
+  <h2><span class="step-number">4</span> ضبط متغير البيئة والتجربة محلياً (Local Development)</h2>
+  <p>قم بإنشاء ملف باسم <code>.env</code> داخل مجلد <code>frontend/</code> وضع به رابط الـ API السحابي:</p>
+  <pre><span class="pre-comment"># داخل الملف: frontend/.env</span>
+<span class="pre-cmd">VITE_API_URL</span>=<span class="pre-val">https://rio-openings-cognitive-four.trycloudflare.com/api</span></pre>
+
+  <p>ثم شغّل خادم التطوير المحلي:</p>
+  <pre><span class="pre-cmd">npm run dev</span></pre>
+  <p>
+    افتح المتصفح على <code>http://localhost:5173</code>، وقم بتسجيل الدخول للتأكد من اتصال الجداول والإحصائيات بالـ VPS بنجاح.
+  </p>
+
+  <div class="card card-info">
+    <strong style="color: #2563eb;">تنبيه هام حول بروتوكول HTTPS في Netlify:</strong>
+    <p style="margin-top: 3px; margin-bottom: 0;">
+      عند نشر الموقع على Netlify، يعمل الموقع تحت بروتوكول مشفر (HTTPS). لذلك يجب أن يكون رابط الـ API يبدأ دائماً بـ <code>https://</code>، لأن المتصفحات تحظر تلقائياً أي استدعاء HTTP عادي من موقع HTTPS تحت ما يسمى <strong>Mixed Content Blocking</strong>.
+    </p>
+  </div>
+
+  <h2><span class="step-number">5</span> خطوات النشر على Netlify عبر GitHub (الطريقة التلقائية)</h2>
+  <ol>
+    <li>توجه إلى منصة <strong><a href="https://app.netlify.com">Netlify</a></strong> وسجل الدخول بحسابك.</li>
+    <li>اضغط على زر <strong>"Add new site"</strong> ثم اختر <strong>"Import an existing project"</strong>.</li>
+    <li>اختر <strong>GitHub</strong> وامنح Netlify إذن الوصول إلى مستودع المشروع (أو قم بعمل Fork للمستودع في حسابك ثم اختره).</li>
+    <li>اختر مستودع <code>School-Management</code> من قائمة المستودعات.</li>
+    <li>في شاشة إعدادات البناء <strong>(Build settings)</strong>، ستجد أن Netlify قرأ ملف <code>netlify.toml</code> تلقائياً. تأكد من مطابقة الحقول:</li>
+  </ol>
+
+  <table class="kv-table">
+    <tr>
+      <td style="width: 35%;">Base directory</td>
+      <td><code>frontend</code></td>
+    </tr>
+    <tr>
+      <td>Build command</td>
+      <td><code>npm run build</code></td>
+    </tr>
+    <tr>
+      <td>Publish directory</td>
+      <td><code>frontend/dist</code> (أو <code>dist</code> إذا كان Base هو frontend)</td>
+    </tr>
+  </table>
+
+  <ol start="6">
+    <li>اضغط على قسم <strong>"Environment variables"</strong> وأضف المتغير التالي:</li>
+  </ol>
+
+  <table class="kv-table">
+    <tr>
+      <td style="width: 35%;">Key (اسم المتغير)</td>
+      <td><code>VITE_API_URL</code></td>
+    </tr>
+    <tr>
+      <td>Value (القيمة)</td>
+      <td><code>https://rio-openings-cognitive-four.trycloudflare.com/api</code></td>
+    </tr>
+  </table>
+
+  <ol start="7">
+    <li>اضغط على زر <strong>"Deploy School-Management"</strong>.</li>
+    <li>في غضون أقل من دقيقة، سينتهي البناء بنجاح ويمنحك Netlify رابطاً حياً مثل: <code>https://your-site-name.netlify.app</code>!</li>
+  </ol>
+
+  <h3>الطريقة البديلة: النشر اليدوي المباشر (Netlify Drop)</h3>
+  <p>إذا لم تكن تريد ربط حساب GitHub وتريد فقط نشر نسخة جاهزة:</p>
+  <pre><span class="pre-comment"># 1. بناء ملفات الإنتاج محلياً</span>
+<span class="pre-cmd">cd</span> frontend
+<span class="pre-cmd">npm run build</span></pre>
+  <p>ثم في موقع Netlify اسحب مجلد <code>frontend/dist</code> وأفلته في قسم <strong>"Sites > Drag & Drop"</strong> وسينشر فوراً.</p>
+
+  <div class="page-break"></div>
+
+  <!-- ==================== PAGE 3 ==================== -->
+  <h2><span class="step-number">6</span> ملف netlify.toml المعد مسبقاً في المشروع</h2>
+  <p>تم تضمين ملف <code>netlify.toml</code> في جذر المستودع وفي مجلد <code>frontend</code>، وهو يضمن معالجة توجيه الـ Single Page App (SPA) ومنع ظهور أخطاء 404 عند عمل Refresh لأي صفحة فرعية:</p>
+  <pre><span class="pre-cmd">[build]</span>
+  base = "frontend"
+  publish = "dist"
+  command = "npm run build"
+
+<span class="pre-cmd">[[redirects]]</span>
+  from = "/*"
+  to = "/index.html"
+  status = 200</pre>
+
+  <h2><span class="step-number">7</span> استكشاف الأخطاء الشائعة وحلولها السريعة</h2>
+
+  <div class="card">
+    <strong style="color: #dc2626;">1. خطأ Network Error أو تعليق عند محاولة تسجيل الدخول:</strong>
+    <p style="margin-top: 3px; margin-bottom: 0;">
+      تأكد من كتابة متغير البيئة <code>VITE_API_URL</code> بشكل دقيق في Netlify (Site configuration > Environment variables). بعد حفظ المتغير، اذهب إلى <strong>Deploys > Trigger deploy > Clear cache and deploy site</strong> ليعاد البناء بالمتغير الجديد.
+    </p>
+  </div>
+
+  <div class="card">
+    <strong style="color: #dc2626;">2. خطأ 404 عند تحديث الصفحات (Refresh):</strong>
+    <p style="margin-top: 3px; margin-bottom: 0;">
+      هذا الخطأ محلول بالفعل بفضل قاعدة <code>[[redirects]]</code> الموجودة في ملف <code>netlify.toml</code> المرفق مع المشروع.
+    </p>
+  </div>
+
+  <div class="card">
+    <strong style="color: #2563eb;">3. تخصيص اسم النطاق ورابط الموقع المجاني:</strong>
+    <p style="margin-top: 3px; margin-bottom: 0;">
+      يمكنك تغيير الرابط العشوائي إلى اسم مخصص لمدرستك مثل: <code>madrasat-ibn-khaldun.netlify.app</code> عن طريق الدخول إلى <strong>Site configuration > Site details > Change site name</strong>.
+    </p>
+  </div>
+
+  <h2>قائمة المراجعة والتحقق النهائي (Checklist)</h2>
+  <table>
+    <tr>
+      <th style="width: 8%; text-align: center;">الحالة</th>
+      <th>خطوة التحقق</th>
+      <th style="width: 25%;">النتيجة المتوقعة</th>
+    </tr>
+    <tr>
+      <td style="text-align: center;"><span class="tag tag-green">✓</span></td>
+      <td>استنساخ المستودع وتشغيل <code>npm install</code></td>
+      <td>اكتمال تثبيت جميع الحزم بنجاح دون نقص</td>
+    </tr>
+    <tr>
+      <td style="text-align: center;"><span class="tag tag-green">✓</span></td>
+      <td>تجربة <code>npm run dev</code> محلياً</td>
+      <td>عمل شاشة الدخول واستعراض الجداول من الـ VPS</td>
+    </tr>
+    <tr>
+      <td style="text-align: center;"><span class="tag tag-green">✓</span></td>
+      <td>تحديد Base dir = <code>frontend</code> في Netlify</td>
+      <td>بناء التطبيق من مسار المجلد الصحيح</td>
+    </tr>
+    <tr>
+      <td style="text-align: center;"><span class="tag tag-green">✓</span></td>
+      <td>إضافة المتغير <code>VITE_API_URL</code> في Netlify</td>
+      <td>اتصال الموقع المنشور بالباك إند دون حظر SSL</td>
+    </tr>
+    <tr>
+      <td style="text-align: center;"><span class="tag tag-green">✓</span></td>
+      <td>فتح رابط Netlify النهائي في المتصفح</td>
+      <td>الموقع يعمل أونلاين 24/7 بسرعة وكفاءة</td>
+    </tr>
+  </table>
+
+  <div class="footer-note">
+    مدرسة ابن خلدون (Madrasat Ibn Khaldun) • نظام إدارة المدارس المتكامل (ويب + هاتف) • تم التوليد الآلي بواسطة Antigravity AI
+  </div>
+
+</body>
+</html>

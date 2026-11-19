@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "237835642902",
+    "project_id": "erpschool-c57a4",
+    "storage_bucket": "erpschool-c57a4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:237835642902:android:7ff9c1b8e2cbc1a1e32d37",
+        "android_client_info": {
+          "package_name": "com.school.management.school_management_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6GHDMqrcwOLCciwma0gGehOiVJxRnnck"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

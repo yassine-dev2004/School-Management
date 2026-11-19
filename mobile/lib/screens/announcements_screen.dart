@@ -179,6 +179,27 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                         setModalState(() => targetClassId = v ?? ''),
                   ),
                 ],
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: ErpColors.primaryLight,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: ErpColors.primary.withValues(alpha: 0.2)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.notifications_active_outlined, size: 18, color: ErpColors.primary),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'سيتم إرسال هذا الإعلان تلقائياً كإشعار فوري (Push Notification) لهواتف الفئة المحددة.',
+                          style: TextStyle(fontSize: 11.5, color: ErpColors.primary, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: saving
@@ -208,13 +229,13 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                           setModalState(() => saving = false);
                           if (res.success) {
                             Navigator.pop(ctx);
-                            if (mounted) showErpToast(context, 'تم حفظ الإعلان بنجاح');
+                            if (mounted) showErpToast(context, 'تم حفظ الإعلان وإرسال الإشعار بنجاح 🚀');
                             _loadAll();
                           } else {
                             if (mounted) showErpToast(context, res.message, isError: true);
                           }
                         },
-                  child: Text(saving ? 'جاري النشر...' : 'حفظ ونشر الإعلان'),
+                  child: Text(saving ? 'جاري النشر...' : 'حفظ ونشر الإعلان وإرسال الإشعار 🚀'),
                 ),
               ],
             ),
