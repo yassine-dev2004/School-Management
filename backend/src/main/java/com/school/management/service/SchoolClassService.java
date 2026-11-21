@@ -6,11 +6,7 @@ import com.school.management.entity.SchoolClass;
 import com.school.management.entity.Student;
 import com.school.management.entity.Teacher;
 import com.school.management.payload.request.ClassRequest;
-import com.school.management.repository.AnnouncementRepository;
-import com.school.management.repository.HomeworkRepository;
-import com.school.management.repository.SchoolClassRepository;
-import com.school.management.repository.StudentRepository;
-import com.school.management.repository.TeacherRepository;
+import com.school.management.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +32,15 @@ public class SchoolClassService {
 
     @Autowired
     private AnnouncementRepository announcementRepository;
+
+    @Autowired
+    private DailyLessonLogRepository dailyLessonLogRepository;
+
+    @Autowired
+    private SchoolDocumentRepository schoolDocumentRepository;
+
+    @Autowired
+    private TeacherAttendanceRepository teacherAttendanceRepository;
 
     public List<SchoolClass> getAllClasses() {
         return schoolClassRepository.findAll();
@@ -119,31 +124,42 @@ public class SchoolClassService {
 
     @Transactional
     public void deleteClass(Long id) {
-        // Safe delete: Disassociate students
-        List<Student> students = studentRepository.findBySchoolClassId(id);
-        for (Student s : students) {
-            s.setSchoolClass(null);
-            studentRepository.save(s);
-        }
-
-        // Disassociate homework
+        // 1. Remove teacher assignments from join table
         try {
-            List<Homework> homeworks = homeworkRepository.findBySchoolClassId(id);
-            for (Homework h : homeworks) {
-                h.setSchoolClass(null);
-                homeworkRepository.save(h);
-            }
+            schoolClassRepository.deleteClassTeachersByClassId(id);
         } catch (Exception ignored) {}
 
-        // Disassociate announcements
+        // 2. Disassociate students (students remain enrolled in school, but without assigned class)
         try {
-            List<Announcement> announcements = announcementRepository.findByTargetClassId(id);
-            for (Announcement a : announcements) {
-                a.setTargetClass(null);
-                announcementRepository.save(a);
-            }
+            studentRepository.disassociateClass(id);
         } catch (Exception ignored) {}
 
+        // 3. Delete daily lesson logs for this class (not nullable class_id)
+        try {
+            dailyLessonLogRepository.deleteBySchoolClassId(id);
+        } catch (Exception ignored) {}
+
+        // 4. Disassociate school documents
+        try {
+            schoolDocumentRepository.disassociateClass(id);
+        } catch (Exception ignored) {}
+
+        // 5. Disassociate teacher attendance records
+        try {
+            teacherAttendanceRepository.disassociateClass(id);
+        } catch (Exception ignored) {}
+
+        // 6. Disassociate homework
+        try {
+            homeworkRepository.disassociateClass(id);
+        } catch (Exception ignored) {}
+
+        // 7. Disassociate announcements
+        try {
+            announcementRepository.disassociateClass(id);
+        } catch (Exception ignored) {}
+
+        // 8. Delete class record
         schoolClassRepository.deleteById(id);
     }
 }

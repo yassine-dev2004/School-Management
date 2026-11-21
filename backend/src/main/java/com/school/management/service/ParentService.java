@@ -38,6 +38,9 @@ public class ParentService {
     private DailyLessonLogRepository dailyLessonLogRepository;
 
     @Autowired
+    private DeviceTokenRepository deviceTokenRepository;
+
+    @Autowired
     private PasswordEncoder encoder;
 
     public List<Parent> getAllParents() {
@@ -279,6 +282,9 @@ public class ParentService {
         }
 
         parentRepository.deleteById(id);
+        try {
+            deviceTokenRepository.deleteByUserId(id);
+        } catch (Exception ignored) {}
         try {
             userRepository.deleteUserRolesByUserId(id);
             userRepository.deleteUserById(id);

@@ -15,4 +15,8 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
 
     @Query("SELECT a FROM Announcement a WHERE a.targetRole = :targetRole OR a.targetRole = 'ALL' OR a.targetRole IS NULL ORDER BY a.datePosted DESC")
     List<Announcement> findByTargetRoleOrAll(@Param("targetRole") String targetRole);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE Announcement a SET a.targetClass = null WHERE a.targetClass.id = :classId")
+    void disassociateClass(@Param("classId") Long classId);
 }

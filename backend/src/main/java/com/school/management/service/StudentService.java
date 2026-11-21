@@ -42,6 +42,15 @@ public class StudentService {
     private HomeworkSubmissionRepository homeworkSubmissionRepository;
 
     @Autowired
+    private StudentPaymentRepository studentPaymentRepository;
+
+    @Autowired
+    private SchoolDocumentRepository schoolDocumentRepository;
+
+    @Autowired
+    private DeviceTokenRepository deviceTokenRepository;
+
+    @Autowired
     private PasswordEncoder encoder;
 
     public List<Student> getAllStudents() {
@@ -182,10 +191,22 @@ public class StudentService {
             homeworkSubmissionRepository.deleteByStudentId(id);
         } catch (Exception ignored) {}
 
+        try {
+            studentPaymentRepository.deleteByStudentId(id);
+        } catch (Exception ignored) {}
+
+        try {
+            schoolDocumentRepository.disassociateStudent(id);
+        } catch (Exception ignored) {}
+
         // Delete student record
         studentRepository.deleteStudentById(id);
 
-        // Delete associated user and roles
+        // Delete associated device tokens, user and roles
+        try {
+            deviceTokenRepository.deleteByUserId(id);
+        } catch (Exception ignored) {}
+
         try {
             userRepository.deleteUserRolesByUserId(id);
             userRepository.deleteUserById(id);

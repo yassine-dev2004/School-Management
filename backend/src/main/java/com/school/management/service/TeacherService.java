@@ -35,6 +35,15 @@ public class TeacherService {
     private HomeworkRepository homeworkRepository;
 
     @Autowired
+    private TeacherAttendanceRepository teacherAttendanceRepository;
+
+    @Autowired
+    private DailyLessonLogRepository dailyLessonLogRepository;
+
+    @Autowired
+    private DeviceTokenRepository deviceTokenRepository;
+
+    @Autowired
     private PasswordEncoder encoder;
 
     public List<Teacher> getAllTeachers() {
@@ -147,30 +156,42 @@ public class TeacherService {
 
     @Transactional
     public void deleteTeacher(Long id) {
-        // Safe delete: Clear homeroom teacher from associated classes
-        Optional<Teacher> teacherOpt = teacherRepository.findById(id);
-        if (teacherOpt.isPresent()) {
-            Teacher teacher = teacherOpt.get();
-            if (teacher.getClasses() != null) {
-                for (SchoolClass sc : teacher.getClasses()) {
-                    sc.setTeacher(null);
-                    schoolClassRepository.save(sc);
-                }
-            }
-            teacher.getSubjects().clear();
-            teacherRepository.save(teacher);
-        }
-
-        // Disassociate homework from teacher
+        // 1. Remove from class_teachers join table and disassociate lead teacher
         try {
-            List<Homework> homeworks = homeworkRepository.findByTeacherId(id);
-            for (Homework h : homeworks) {
-                h.setTeacher(null);
-                homeworkRepository.save(h);
-            }
+            schoolClassRepository.deleteClassTeachersByTeacherId(id);
         } catch (Exception ignored) {}
 
-        teacherRepository.deleteById(id);
+        try {
+            schoolClassRepository.disassociateLeadTeacher(id);
+        } catch (Exception ignored) {}
+
+        // 2. Clear teacher_subjects join table
+        try {
+            teacherRepository.deleteTeacherSubjectsByTeacherId(id);
+        } catch (Exception ignored) {}
+
+        // 3. Delete teacher attendance / hourly logs
+        try {
+            teacherAttendanceRepository.deleteByTeacherId(id);
+        } catch (Exception ignored) {}
+
+        // 4. Disassociate daily lesson logs and homework
+        try {
+            dailyLessonLogRepository.disassociateTeacher(id);
+        } catch (Exception ignored) {}
+
+        try {
+            homeworkRepository.disassociateTeacher(id);
+        } catch (Exception ignored) {}
+
+        // 5. Delete teacher record
+        teacherRepository.deleteTeacherById(id);
+
+        // 6. Delete device tokens, user roles, and user account
+        try {
+            deviceTokenRepository.deleteByUserId(id);
+        } catch (Exception ignored) {}
+
         try {
             userRepository.deleteUserRolesByUserId(id);
             userRepository.deleteUserById(id);

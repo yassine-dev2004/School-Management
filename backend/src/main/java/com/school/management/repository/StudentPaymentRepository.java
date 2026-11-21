@@ -20,4 +20,8 @@ public interface StudentPaymentRepository extends JpaRepository<StudentPayment, 
 
     @Query("SELECT p FROM StudentPayment p WHERE p.student.schoolClass.id = :classId")
     List<StudentPayment> findByClassId(@Param("classId") Long classId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM StudentPayment p WHERE p.student.id = :studentId")
+    void deleteByStudentId(@Param("studentId") Long studentId);
 }
