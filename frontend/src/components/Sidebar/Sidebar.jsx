@@ -111,8 +111,8 @@ const Sidebar = ({ collapsed, mobileOpen, onCloseMobile }) => {
           </div>
           {(!collapsed || mobileOpen) && (
             <div className="brand-copy">
-              <span className="brand-text">مدرسة ابن خلدون</span>
-              <span className="brand-sub">Madrasat Ibn Khaldun</span>
+              <span className="brand-text">المدرسة الابتدائية الخاصة بن خلدون</span>
+              <span className="brand-sub">École Primaire Privée Bn Khaldoun</span>
             </div>
           )}
         </div>

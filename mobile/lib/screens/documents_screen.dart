@@ -342,7 +342,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                   ErpPageHeader(
                     title: 'مستودع الوثائق والأوراق المرفوعة',
                     subtitle:
-                        'رفع وتوثيق الفروض، المذكرات، أوراق الامتحانات المصورة في مدرسة ابن خلدون',
+                        'رفع وتوثيق الفروض، المذكرات، أوراق الامتحانات المصورة في المدرسة الابتدائية الخاصة بن خلدون',
                     actions: [
                       ElevatedButton.icon(
                         onPressed: _openUploadModal,

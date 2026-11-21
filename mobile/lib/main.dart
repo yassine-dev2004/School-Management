@@ -29,7 +29,7 @@ class SchoolManagementApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'مدرسة ابن خلدون — Madrasat Ibn Khaldun',
+      title: 'المدرسة الابتدائية الخاصة بن خلدون — École Primaire Privée Bn Khaldoun',
       debugShowCheckedModeBanner: false,
       theme: ErpTheme.build(),
       builder: (context, child) {

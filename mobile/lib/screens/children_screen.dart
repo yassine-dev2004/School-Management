@@ -91,7 +91,7 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                   const ErpPageHeader(
                     title: 'أبنائي والدروس والرسوم',
                     subtitle:
-                        'متابعة ما درسه ابنك اليوم، رسوم الدراسة المتبقية، والدرجات في مدرسة ابن خلدون',
+                        'متابعة ما درسه ابنك اليوم، رسوم الدراسة المتبقية، والدرجات في المدرسة الابتدائية الخاصة بن خلدون',
                   ),
                   if (_children.isEmpty)
                     const ErpEmptyState(

@@ -348,7 +348,7 @@ class _ErpShellState extends State<ErpShell> {
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'مدرسة ابن خلدون',
+                      'المدرسة الابتدائية الخاصة بن خلدون',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -463,7 +463,7 @@ class _ErpShellState extends State<ErpShell> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'مدرسة ابن خلدون',
+                            'المدرسة الابتدائية الخاصة بن خلدون',
                             style: TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.w900,
@@ -471,7 +471,7 @@ class _ErpShellState extends State<ErpShell> {
                             ),
                           ),
                           Text(
-                            'Madrasat Ibn Khaldun',
+                            'École Primaire Privée Bn Khaldoun',
                             style: TextStyle(
                               fontSize: 11.5,
                               color: ErpColors.textMuted,

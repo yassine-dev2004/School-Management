@@ -210,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'مدرسة ابن خلدون',
+                      'المدرسة الابتدائية الخاصة بن خلدون',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 22,
@@ -220,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Madrasat Ibn Khaldun — بوابة الإدارة والمعلمين والأولياء',
+                      'École Primaire Privée Bn Khaldoun — بوابة الإدارة والمعلمين والأولياء',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,

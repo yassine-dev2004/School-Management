@@ -110,7 +110,7 @@ const AdminDashboard = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">لوحة التحكم الرئيسية</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '4px 0 0 0' }}>مرحباً بك في مدرسة ابن خلدون (Madrasat Ibn Khaldun) - المتابعة المباشرة والبيانات الحقيقية</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '4px 0 0 0' }}>مرحباً بك في المدرسة الابتدائية الخاصة بن خلدون (École Primaire Privée Bn Khaldoun) - المتابعة المباشرة والبيانات الحقيقية</p>
         </div>
         <div className="page-header-actions">
           <button 

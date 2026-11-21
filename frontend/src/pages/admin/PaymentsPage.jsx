@@ -251,7 +251,7 @@ const PaymentsPage = () => {
         <div>
           <h1 className="page-title">إدارة الأقساط والرسوم الدراسية</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '4px 0 0 0' }}>
-            متابعة حالة سداد كل طالب شهرياً وسنوياً واحتساب المبالغ المتبقية في مدرسة ابن خلدون
+            متابعة حالة سداد كل طالب شهرياً وسنوياً واحتساب المبالغ المتبقية في المدرسة الابتدائية الخاصة بن خلدون
           </p>
         </div>
         <div className="page-header-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
