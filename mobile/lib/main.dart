@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/login_screen.dart';
+import 'services/api_service.dart';
 import 'services/notification_service.dart';
 import 'theme/erp_theme.dart';
 
@@ -19,7 +20,7 @@ class SchoolManagementApp extends StatelessWidget {
     final token = prefs.getString('token');
     final loggedIn = token != null && token.isNotEmpty;
     if (loggedIn) {
-      final role = prefs.getString('role');
+      final role = ApiService.normalizeRole(prefs.getString('role'));
       NotificationService.setupUserSubscriptions(role: role);
     }
     return loggedIn;

@@ -41,9 +41,11 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result['success'] == true) {
-      final role = result['data']?['roles'] != null && (result['data']['roles'] as List).isNotEmpty
-          ? result['data']['roles'][0].toString()
-          : null;
+      final role = result['role']?.toString() ??
+          (result['data']?['roles'] != null &&
+                  (result['data']['roles'] as List).isNotEmpty
+              ? result['data']['roles'][0].toString()
+              : null);
       NotificationService.setupUserSubscriptions(role: role);
 
       showErpToast(context, 'تم تسجيل الدخول بنجاح');

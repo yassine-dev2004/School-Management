@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../navigation/erp_route.dart';
 import '../navigation/erp_router.dart';
 import '../services/api_service.dart';
@@ -35,40 +36,74 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
 
-    final session = await ApiService.getUserSession();
-    _username = session['username'] ?? 'المستخدم';
-    _role = session['role'] ?? 'PARENT';
+    try {
+      final session = await ApiService.getUserSession();
+      String currentRole = ApiService.normalizeRole(session['role']);
+      String currentUsername = session['username'] ?? 'المستخدم';
 
-    if (_isStaff) {
-      final staffData = await ApiService.getStaffDashboardData(_role);
-      if (!mounted) return;
-      setState(() {
-        _staffData = staffData;
-        _announcements = (staffData['announcements'] as List<dynamic>?) ?? [];
-        _isLoading = false;
-      });
-    } else {
-      final results = await Future.wait([
-        ApiService.getParentDashboard(),
-        ApiService.getAnnouncementsForRole(_role),
-      ]);
-      final parentData = results[0] as Map<String, dynamic>?;
-      if (!mounted) return;
-      if (parentData != null && parentData['unauthorized'] == true) {
-        await ApiService.logout();
-        if (mounted) ErpRouter.goToLogin(context);
-        return;
+      // Self-healing check: if role is still PARENT, double-check /users/profile to avoid wrong role
+      if (!ApiService.isStaffRole(currentRole)) {
+        final profileRes = await ApiService.get('/users/profile');
+        if (profileRes.success && profileRes.data is Map) {
+          final p = profileRes.data as Map;
+          if (p['roles'] != null &&
+              p['roles'] is List &&
+              (p['roles'] as List).isNotEmpty) {
+            final first = p['roles'][0];
+            final rName =
+                (first is Map ? first['name'] : first)?.toString() ?? '';
+            final detected = ApiService.normalizeRole(rName);
+            if (ApiService.isStaffRole(detected)) {
+              currentRole = detected;
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('role', currentRole);
+            }
+          }
+        }
       }
-      final children = (parentData?['children'] as List<dynamic>?) ?? [];
-      final hw = await ApiService.getHomeworkForParentChildren(children);
-      if (!mounted) return;
 
-      setState(() {
-        _parentData = parentData;
-        _announcements = results[1] as List<dynamic>;
-        _parentHomework = hw;
-        _isLoading = false;
-      });
+      _role = currentRole;
+      _username = currentUsername;
+
+      if (_isStaff) {
+        final staffData = await ApiService.getStaffDashboardData(_role);
+        if (!mounted) return;
+        setState(() {
+          _role = currentRole;
+          _username = currentUsername;
+          _staffData = staffData;
+          _announcements = (staffData['announcements'] as List<dynamic>?) ?? [];
+          _isLoading = false;
+        });
+      } else {
+        final results = await Future.wait([
+          ApiService.getParentDashboard(),
+          ApiService.getAnnouncementsForRole(_role),
+        ]);
+        final parentData = results[0] as Map<String, dynamic>?;
+        if (!mounted) return;
+        if (parentData != null && parentData['unauthorized'] == true) {
+          await ApiService.logout();
+          if (mounted) ErpRouter.goToLogin(context);
+          return;
+        }
+        final children = (parentData?['children'] as List<dynamic>?) ?? [];
+        final hw = await ApiService.getHomeworkForParentChildren(children);
+        if (!mounted) return;
+
+        setState(() {
+          _role = currentRole;
+          _username = currentUsername;
+          _parentData = parentData;
+          _announcements = results[1] as List<dynamic>;
+          _parentHomework = hw;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -354,14 +389,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onTap: () => ErpRouter.go(context, ErpRoute.students),
           ),
           ErpStatCard(
-            label: _isAdmin ? 'المعلمون' : 'أولياء الأمور',
-            value: _isAdmin ? '$totalTeachers' : '$totalParents',
-            icon: _isAdmin
-                ? Icons.school_outlined
-                : Icons.family_restroom_outlined,
+            label: 'إجمالي المعلمين',
+            value: '$totalTeachers',
+            icon: Icons.school_outlined,
             iconBg: const Color(0xFF333333),
             onTap: () => ErpRouter.go(
-                context, _isAdmin ? ErpRoute.teachers : ErpRoute.parents),
+                context, _isAdmin ? ErpRoute.teachers : ErpRoute.dashboard),
           ),
           ErpStatCard(
             label: 'الفصول النشطة',
@@ -380,6 +413,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       const SizedBox(height: 12),
+      // Web-identical Quick Action Shortcuts
+      ErpCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'إجراءات سريعة',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: ErpColors.textMain,
+              ),
+            ),
+            const SizedBox(height: 10),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 2.4,
+              children: [
+                _quickActionBtn(
+                  icon: Icons.add_circle_outline,
+                  label: 'إضافة طالب جديد',
+                  color: ErpColors.primary,
+                  onTap: () => ErpRouter.go(context, ErpRoute.students),
+                ),
+                _quickActionBtn(
+                  icon: Icons.fact_check_outlined,
+                  label: 'تسجيل الحضور اليومي',
+                  color: ErpColors.success,
+                  onTap: () => ErpRouter.go(context, ErpRoute.attendance),
+                ),
+                _quickActionBtn(
+                  icon: Icons.assignment_outlined,
+                  label: 'رصد درجات الطلاب',
+                  color: const Color(0xFFF59E0B),
+                  onTap: () => ErpRouter.go(context, ErpRoute.grades),
+                ),
+                _quickActionBtn(
+                  icon: Icons.campaign_outlined,
+                  label: 'نشر إعلان جديد',
+                  color: const Color(0xFF6366F1),
+                  onTap: () => ErpRouter.go(context, ErpRoute.announcements),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
       // Secondary metrics row
       Row(
         children: [
@@ -392,7 +477,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onTap: () => ErpRouter.go(context, ErpRoute.attendance),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: ErpStatCard(
               label: 'الواجبات النشطة',
@@ -400,6 +485,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               icon: Icons.description_outlined,
               iconBg: ErpColors.warning,
               onTap: () => ErpRouter.go(context, ErpRoute.homework),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ErpStatCard(
+              label: 'أولياء الأمور',
+              value: '$totalParents',
+              icon: Icons.family_restroom_outlined,
+              iconBg: const Color(0xFF4A4A4A),
+              onTap: () => ErpRouter.go(context, ErpRoute.parents),
             ),
           ),
         ],
@@ -733,9 +828,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'آخر الإعلانات',
-                style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800),
+              Row(
+                children: [
+                  const Text(
+                    'آخر الإعلانات',
+                    style:
+                        TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(width: 8),
+                  ErpBadge(
+                    label: '${_announcements.length}',
+                    tone: _announcements.isNotEmpty
+                        ? ErpBadgeTone.info
+                        : ErpBadgeTone.neutral,
+                  ),
+                ],
               ),
               TextButton(
                 onPressed: () => ErpRouter.go(context, ErpRoute.announcements),
@@ -800,6 +907,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             }),
         ],
+      ),
+    );
+  }
+
+  Widget _quickActionBtn({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: ErpColors.bgBase,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: ErpColors.border),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 18, color: color),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: ErpColors.textMain,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -79,16 +79,31 @@ class ApiService {
     };
   }
 
-  static bool isAdminRole(String role) => role.contains('ADMINISTRATOR');
-  static bool isTeacherRole(String role) => role.contains('TEACHER');
+  static String normalizeRole(String? role) {
+    if (role == null || role.trim().isEmpty) return 'PARENT';
+    final r = role.trim().toUpperCase().replaceAll('ROLE_', '');
+    if (r.contains('ADMIN')) return 'ADMINISTRATOR';
+    if (r.contains('TEACHER') || r.contains('PROF')) return 'TEACHER';
+    if (r.contains('STUDENT') || r.contains('ELEVE')) return 'STUDENT';
+    return 'PARENT';
+  }
+
+  static bool isAdminRole(String role) =>
+      normalizeRole(role) == 'ADMINISTRATOR';
+  static bool isTeacherRole(String role) =>
+      normalizeRole(role) == 'TEACHER';
   static bool isStaffRole(String role) =>
       isAdminRole(role) || isTeacherRole(role);
-  static bool isParentRole(String role) => role.contains('PARENT');
+  static bool isParentRole(String role) =>
+      normalizeRole(role) == 'PARENT';
+  static bool isStudentRole(String role) =>
+      normalizeRole(role) == 'STUDENT';
 
   static String roleLabel(String role) {
-    if (role.contains('ADMINISTRATOR')) return 'مدير النظام';
-    if (role.contains('TEACHER')) return 'معلم';
-    if (role.contains('STUDENT')) return 'طالب';
+    final norm = normalizeRole(role);
+    if (norm == 'ADMINISTRATOR') return 'مدير النظام';
+    if (norm == 'TEACHER') return 'معلم';
+    if (norm == 'STUDENT') return 'طالب';
     return 'ولي أمر';
   }
 
@@ -142,10 +157,25 @@ class ApiService {
         await prefs.setString('token', data['token'] ?? '');
         await prefs.setString('username', data['username'] ?? username);
         await prefs.setString('email', data['email'] ?? '');
-        if (data['roles'] != null && data['roles'].isNotEmpty) {
-          await prefs.setString('role', data['roles'][0].toString());
+        if (data['id'] != null) {
+          await prefs.setInt('userId', (data['id'] as num).toInt());
         }
-        return {'success': true, 'data': data};
+
+        String rawRole = 'PARENT';
+        if (data['roles'] != null && data['roles'] is List && (data['roles'] as List).isNotEmpty) {
+          final first = data['roles'][0];
+          if (first is Map && first['name'] != null) {
+            rawRole = first['name'].toString();
+          } else {
+            rawRole = first.toString();
+          }
+        } else if (data['role'] != null) {
+          rawRole = data['role'].toString();
+        }
+        final normalizedRole = normalizeRole(rawRole);
+        await prefs.setString('role', normalizedRole);
+
+        return {'success': true, 'data': data, 'role': normalizedRole};
       } else if (response.statusCode == 401) {
         return {
           'success': false,
@@ -297,52 +327,99 @@ class ApiService {
     if (res.statusCode == 401) {
       return {'unauthorized': true};
     }
-    if (res.success && res.data is Map<String, dynamic>) {
-      return res.data as Map<String, dynamic>;
+    if (res.success && res.data is Map) {
+      return (res.data as Map).cast<String, dynamic>();
     }
     return null;
   }
 
   static Future<Map<String, dynamic>> getStaffDashboardData(String role) async {
-    final summaryRes = await get('/dashboard/summary');
-    if (summaryRes.success && summaryRes.data is Map<String, dynamic>) {
-      final d = summaryRes.data as Map<String, dynamic>;
-      return {
-        'announcements': (d['announcements'] as List<dynamic>?) ?? <dynamic>[],
-        'totalStudents': d['students'] ?? 0,
-        'totalTeachers': d['teachers'] ?? 0,
-        'totalClasses': d['classes'] ?? 0,
-        'totalSubjects': d['subjects'] ?? 0,
-        'totalParents': d['parentsCount'] ?? 0,
-        'totalHomework': d['homeworkCount'] ?? 0,
-        'attendanceRate': d['attendanceRate'] ?? 0,
-        'checkedInToday': d['checkedInToday'] == true,
-        'todayStatus': d['todayStatus'],
-      };
-    }
+    try {
+      final summaryRes = await get('/dashboard/summary');
+      if (summaryRes.success && summaryRes.data is Map) {
+        final d = (summaryRes.data as Map).cast<String, dynamic>();
+        final rawAnnouncements =
+            (d['announcements'] as List<dynamic>?) ?? <dynamic>[];
+        final sortedAnnouncements = List<dynamic>.from(rawAnnouncements)
+          ..sort((a, b) {
+            final idA = (a is Map ? (a['id'] as num?)?.toInt() : 0) ?? 0;
+            final idB = (b is Map ? (b['id'] as num?)?.toInt() : 0) ?? 0;
+            return idB.compareTo(idA);
+          });
+
+        final totalStudents = (d['students'] as num?)?.toInt() ?? 0;
+        final totalTeachers = (d['teachers'] as num?)?.toInt() ?? 0;
+        final totalClasses = (d['classes'] as num?)?.toInt() ?? 0;
+        final totalSubjects = (d['subjects'] as num?)?.toInt() ?? 0;
+        final totalParents = (d['parentsCount'] as num?)?.toInt() ?? 0;
+        final totalHomework = (d['homeworkCount'] as num?)?.toInt() ?? 0;
+        final attendanceRate = (d['attendanceRate'] as num?)?.toInt() ?? 0;
+        final checkedInToday = d['checkedInToday'] == true;
+        final todayStatus = d['todayStatus']?.toString();
+
+        return {
+          'announcements': sortedAnnouncements,
+          'totalStudents': totalStudents,
+          'students': totalStudents,
+          'totalTeachers': totalTeachers,
+          'teachers': totalTeachers,
+          'totalClasses': totalClasses,
+          'classes': totalClasses,
+          'totalSubjects': totalSubjects,
+          'subjects': totalSubjects,
+          'totalParents': totalParents,
+          'parents': totalParents,
+          'totalHomework': totalHomework,
+          'homework': totalHomework,
+          'attendanceRate': attendanceRate,
+          'checkedInToday': checkedInToday,
+          'todayStatus': todayStatus,
+        };
+      }
+    } catch (_) {}
 
     final todayStr = DateTime.now().toIso8601String().split('T').first;
     final isAdmin = isAdminRole(role);
 
-    final results = await Future.wait([
-      getList('/students'),
-      isAdmin ? getList('/teachers') : Future.value(<dynamic>[]),
-      getList('/classes'),
-      getList('/subjects'),
-      getList('/parents'),
-      getList('/homework'),
-      getList('/announcements'),
-      getList('/attendance/date/$todayStr'),
-    ]);
+    List<dynamic> students = [];
+    List<dynamic> teachers = [];
+    List<dynamic> classes = [];
+    List<dynamic> subjects = [];
+    List<dynamic> parents = [];
+    List<dynamic> homework = [];
+    List<dynamic> announcements = [];
+    List<dynamic> todayAttendance = [];
 
-    final students = results[0];
-    final teachers = results[1];
-    final classes = results[2];
-    final subjects = results[3];
-    final parents = results[4];
-    final homework = results[5];
-    final announcements = results[6];
-    final todayAttendance = results[7];
+    try {
+      final results = await Future.wait([
+        getList('/students').catchError((_) => <dynamic>[]),
+        isAdmin
+            ? getList('/teachers').catchError((_) => <dynamic>[])
+            : Future.value(<dynamic>[]),
+        getList('/classes').catchError((_) => <dynamic>[]),
+        getList('/subjects').catchError((_) => <dynamic>[]),
+        getList('/parents').catchError((_) => <dynamic>[]),
+        getList('/homework').catchError((_) => <dynamic>[]),
+        getList('/announcements').catchError((_) => <dynamic>[]),
+        getList('/attendance/date/$todayStr').catchError((_) => <dynamic>[]),
+      ]);
+
+      students = results[0];
+      teachers = results[1];
+      classes = results[2];
+      subjects = results[3];
+      parents = results[4];
+      homework = results[5];
+      announcements = results[6];
+      todayAttendance = results[7];
+    } catch (_) {}
+
+    final sortedAnnouncements = List<dynamic>.from(announcements)
+      ..sort((a, b) {
+        final idA = (a is Map ? (a['id'] as num?)?.toInt() : 0) ?? 0;
+        final idB = (b is Map ? (b['id'] as num?)?.toInt() : 0) ?? 0;
+        return idB.compareTo(idA);
+      });
 
     int attendanceRate = 0;
     if (todayAttendance.isNotEmpty) {
@@ -360,9 +437,10 @@ class ApiService {
       'subjects': subjects,
       'parents': parents,
       'homework': homework,
-      'announcements': announcements,
+      'announcements': sortedAnnouncements,
       'totalStudents': students.length,
-      'totalTeachers': teachers.length,
+      'totalTeachers':
+          isTeacherRole(role) && teachers.isEmpty ? 1 : teachers.length,
       'totalClasses': classes.length,
       'totalSubjects': subjects.length,
       'totalParents': parents.length,
@@ -372,14 +450,22 @@ class ApiService {
   }
 
   static Future<List<dynamic>> getAnnouncementsForRole(String role) async {
+    List<dynamic> list;
     if (isStaffRole(role)) {
-      return getList('/announcements');
-    }
-    if (isParentRole(role)) {
+      list = await getList('/announcements');
+    } else if (isParentRole(role)) {
       final res = await getList('/announcements/role/PARENT');
-      if (res.isNotEmpty) return res;
+      list = res.isNotEmpty ? res : await getList('/announcements');
+    } else {
+      list = await getList('/announcements');
     }
-    return getList('/announcements');
+    final sorted = List<dynamic>.from(list);
+    sorted.sort((a, b) {
+      final idA = (a is Map ? (a['id'] as num?)?.toInt() : 0) ?? 0;
+      final idB = (b is Map ? (b['id'] as num?)?.toInt() : 0) ?? 0;
+      return idB.compareTo(idA);
+    });
+    return sorted;
   }
 
   static Future<List<dynamic>> getHomeworkForParentChildren(

@@ -73,13 +73,12 @@ class _ErpShellState extends State<ErpShell> {
     if (!mounted) return;
     setState(() {
       _username = session['username'] ?? 'المستخدم';
-      _role = session['role'] ?? 'PARENT';
+      _role = ApiService.normalizeRole(session['role']);
     });
   }
 
   bool get _isAdmin => ApiService.isAdminRole(_role);
-  bool get _isTeacher => ApiService.isTeacherRole(_role);
-  bool get _isStaff => _isAdmin || _isTeacher;
+  bool get _isStaff => ApiService.isStaffRole(_role);
 
   List<_MenuSection> _buildSections() {
     if (_isStaff) {

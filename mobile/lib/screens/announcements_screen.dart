@@ -37,7 +37,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   Future<void> _loadAll() async {
     setState(() => _loading = true);
     final session = await ApiService.getUserSession();
-    _role = session['role'] ?? 'PARENT';
+    _role = ApiService.normalizeRole(session['role']);
 
     final results = await Future.wait([
       ApiService.getAnnouncementsForRole(_role),
@@ -264,7 +264,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
     return ErpShell(
       currentRoute: ErpRoute.announcements,
       onRefresh: _loadAll,
-      floatingActionButton: _isAdmin
+      floatingActionButton: ApiService.isStaffRole(_role)
           ? FloatingActionButton.extended(
               backgroundColor: ErpColors.primary,
               foregroundColor: Colors.white,
